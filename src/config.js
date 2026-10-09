@@ -78,6 +78,13 @@ const configOptions = new Map([
     }
   ],
   [
+    'enableLiveCatchup',
+    {
+      default: false,
+      desc: 'Reduce live stream delay (skip to live edge)'
+    }
+  ],
+  [
     'autoAccountSelect',
     {
       default: false,
