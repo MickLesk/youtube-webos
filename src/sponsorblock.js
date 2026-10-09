@@ -38,7 +38,24 @@ const barTypes = {
     color: '#008fd6',
     opacity: '0.7',
     name: 'recap or preview'
+  },
+  filler: {
+    color: '#7300ff',
+    opacity: '0.9',
+    name: 'filler tangent'
   }
+};
+
+// Maps SponsorBlock categories to the config keys that enable skipping them.
+const categoryConfigKeys = {
+  sponsor: 'enableSponsorBlockSponsor',
+  intro: 'enableSponsorBlockIntro',
+  outro: 'enableSponsorBlockOutro',
+  interaction: 'enableSponsorBlockInteraction',
+  selfpromo: 'enableSponsorBlockSelfPromo',
+  music_offtopic: 'enableSponsorBlockMusicOfftopic',
+  preview: 'enableSponsorBlockPreview',
+  filler: 'enableSponsorBlockFiller'
 };
 
 const sponsorblockAPI = 'https://sponsorblock.inf.re/api';
@@ -66,31 +83,51 @@ class SponsorBlockHandler {
 
   async init() {
     const videoHash = sha256(this.videoID).substring(0, 4);
-    const categories = [
-      'sponsor',
-      'intro',
-      'outro',
-      'interaction',
-      'selfpromo',
-      'music_offtopic',
-      'preview'
-    ];
-    const resp = await fetch(
-      `${sponsorblockAPI}/skipSegments/${videoHash}?categories=${encodeURIComponent(
-        JSON.stringify(categories)
-      )}`
-    );
-    const results = await resp.json();
+    const categories = Object.keys(categoryConfigKeys);
 
-    const result = results.find((v) => v.videoID === this.videoID);
+    let results;
+    try {
+      const resp = await fetch(
+        `${sponsorblockAPI}/skipSegments/${videoHash}?categories=${encodeURIComponent(
+          JSON.stringify(categories)
+        )}`
+      );
+
+      // The API answers 404 when no segments exist for the hash prefix.
+      if (resp.status === 404) {
+        console.debug(this.videoID, 'No segments found.');
+        return;
+      }
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
+      }
+
+      results = await resp.json();
+    } catch (err) {
+      console.warn(this.videoID, 'Failed to fetch SponsorBlock segments:', err);
+      return;
+    }
+
+    // The handler may have been destroyed while the request was in flight.
+    if (!this.active) return;
+
+    const result = Array.isArray(results)
+      ? results.find((v) => v.videoID === this.videoID)
+      : null;
     console.debug(this.videoID, 'Got it:', result);
 
-    if (!result || !result.segments || !result.segments.length) {
+    // Only `skip` segments are relevant here. `full` marks the whole video
+    // (e.g. a sponsored video) and must never trigger a seek.
+    const segments = (result?.segments ?? []).filter(
+      (seg) => (seg.actionType ?? 'skip') === 'skip'
+    );
+
+    if (!segments.length) {
       console.debug(this.videoID, 'No segments found.');
       return;
     }
 
-    this.segments = result.segments;
+    this.segments = segments;
     this.skippableCategories = this.getSkippableCategories();
 
     this.scheduleSkipHandler = () => this.scheduleSkip();
@@ -101,29 +138,9 @@ class SponsorBlockHandler {
   }
 
   getSkippableCategories() {
-    const skippableCategories = [];
-    if (configRead('enableSponsorBlockSponsor')) {
-      skippableCategories.push('sponsor');
-    }
-    if (configRead('enableSponsorBlockIntro')) {
-      skippableCategories.push('intro');
-    }
-    if (configRead('enableSponsorBlockOutro')) {
-      skippableCategories.push('outro');
-    }
-    if (configRead('enableSponsorBlockInteraction')) {
-      skippableCategories.push('interaction');
-    }
-    if (configRead('enableSponsorBlockSelfPromo')) {
-      skippableCategories.push('selfpromo');
-    }
-    if (configRead('enableSponsorBlockMusicOfftopic')) {
-      skippableCategories.push('music_offtopic');
-    }
-    if (configRead('enableSponsorBlockPreview')) {
-      skippableCategories.push('preview');
-    }
-    return skippableCategories;
+    return Object.keys(categoryConfigKeys).filter((category) =>
+      configRead(categoryConfigKeys[category])
+    );
   }
 
   attachVideo() {
@@ -282,6 +299,8 @@ class SponsorBlockHandler {
           console.debug(this.videoID, 'Currently paused, ignoring...');
           return;
         }
+        // Read the settings at skip time so toggles apply mid-video.
+        this.skippableCategories = this.getSkippableCategories();
         if (!this.skippableCategories.includes(segment.category)) {
           console.debug(
             this.videoID,

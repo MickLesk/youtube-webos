@@ -43,6 +43,13 @@ const configOptions = new Map([
     }
   ],
   [
+    'enableSponsorBlockFiller',
+    {
+      default: false,
+      desc: 'Skip filler tangents and jokes'
+    }
+  ],
+  [
     'hideLogo',
     {
       default: false,
