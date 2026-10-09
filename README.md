@@ -26,7 +26,6 @@
 - Force Highest Video Quality
 - Audio-Only Mode (🟦 Blue button on remote)
 - Full Animation Support
-- Shorts Removal
 - Higher-Quality Thumbnails
 - On-Screen Clock Overlay
 - YouTube Logo Removal
@@ -35,6 +34,13 @@
 - Live stream catch-up (skip to live edge)
 - Prefer VP9 over AV1 codec
 - Mute video previews
+- Default playback speed (🟥 Red button cycles speeds while watching)
+- SponsorBlock modes per category (Skip / Ask / Show only / Off), jump to highlight (🟨 Yellow button)
+- No more "Are you still watching?" prompts
+- Shorts removal everywhere, hide watched videos, block channels
+- [Return YouTube Dislike](https://returnyoutubedislike.com/) and [DeArrow](https://dearrow.ajay.app/)
+- Prefer original audio over dubbed tracks, no automatic subtitles
+- OLED black theme, option to disable animations, permanent clock
 - Version offset that stops the LG Content Store from replacing the app
 
 > [!NOTE]
