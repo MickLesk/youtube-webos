@@ -4,14 +4,16 @@ import TerserPlugin from 'terser-webpack-plugin';
 import pkgJson from './package.json' with { type: 'json' };
 import webpack from 'webpack';
 import { basename } from 'node:path';
+import appVersion from './tools/app-version.cjs';
 
 /**
+ * Inject the app version, offset to prevent unwanted auto updates.
  * @param input {Buffer<ArrayBufferLike>}
  * @returns {string}
  */
 function transformAppInfo(input) {
   const appInfo = JSON.parse(input.toString());
-  appInfo.version = pkgJson.version;
+  appInfo.version = appVersion.getAppVersion();
   return JSON.stringify(appInfo, null, 2);
 }
 
