@@ -3,6 +3,8 @@
  * Shorts removal, hiding watched videos, blocked channels and DeArrow.
  */
 import { configRead } from './config';
+import { getPlayerManager, PlayerMode } from './player_api';
+import { setCurrentChannelProvider } from './ui';
 
 type Json = Record<string, unknown>;
 
@@ -341,3 +343,12 @@ JSON.parse = function parse(
 
   return res;
 };
+
+// Lets the options panel offer "Block channel" for the video being watched.
+void getPlayerManager().then((playerManager) => {
+  setCurrentChannelProvider(() => {
+    if (!document.body.classList.contains('WEB_PAGE_TYPE_WATCH')) return null;
+    if (playerManager.playerMode !== PlayerMode.NORMAL) return null;
+    return playerManager.player.getVideoData().author?.trim() || null;
+  });
+});

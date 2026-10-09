@@ -24,6 +24,7 @@ export type VideoID = string;
 export interface VideoData {
   video_id: VideoID | undefined;
   isLive?: boolean;
+  author?: string;
 }
 
 export type PlayerStateKeys =
