@@ -50,6 +50,13 @@ const configOptions = new Map([
     }
   ],
   [
+    'mutePreviews',
+    {
+      default: false,
+      desc: 'Mute video previews while browsing'
+    }
+  ],
+  [
     'hideLogo',
     {
       default: false,

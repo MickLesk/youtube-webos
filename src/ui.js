@@ -152,6 +152,7 @@ function createOptionsPanel() {
   elmContainer.appendChild(createConfigCheckbox('forceHighResVideo'));
   elmContainer.appendChild(createConfigCheckbox('forceVp9Codec'));
   elmContainer.appendChild(createConfigCheckbox('removeEndscreen'));
+  elmContainer.appendChild(createConfigCheckbox('mutePreviews'));
   elmContainer.appendChild(createConfigCheckbox('autoAccountSelect'));
   elmContainer.appendChild(createConfigCheckbox('enableLiveCatchup'));
   elmContainer.appendChild(createConfigCheckbox('enableSponsorBlock'));
