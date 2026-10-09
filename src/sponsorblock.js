@@ -1,6 +1,6 @@
 import sha256 from 'tiny-sha256';
 import { configRead } from './config';
-import { showNotification } from './ui';
+import { setColorKeyHandler, showNotification } from './ui';
 
 // Copied from https://github.com/ajayyy/SponsorBlock/blob/9392d16617d2d48abb6125c00e2ff6042cb7bebe/src/config.ts#L179-L233
 const barTypes = {
@@ -58,6 +58,21 @@ const categoryConfigKeys = {
   filler: 'enableSponsorBlockFiller'
 };
 
+/**
+ * Per-category mode: 'skip' (automatic), 'manual' (offer skip on [YELLOW]),
+ * 'show' (only mark on the progress bar) or 'off'.
+ */
+function getCategoryMode(category) {
+  const key = categoryConfigKeys[category];
+  return key ? configRead(key) : 'off';
+}
+
+function notify(text, time = 2000) {
+  if (configRead('enableSponsorBlockNotifications')) {
+    showNotification(text, time, 'indigo');
+  }
+}
+
 const sponsorblockAPI = 'https://sponsorblock.inf.re/api';
 
 class SponsorBlockHandler {
@@ -75,7 +90,8 @@ class SponsorBlockHandler {
   scheduleSkipHandler = null;
   durationChangeHandler = null;
   segments = null;
-  skippableCategories = [];
+  highlight = null;
+  notifiedSegments = new Set();
 
   constructor(videoID) {
     this.videoID = videoID;
@@ -83,7 +99,7 @@ class SponsorBlockHandler {
 
   async init() {
     const videoHash = sha256(this.videoID).substring(0, 4);
-    const categories = Object.keys(categoryConfigKeys);
+    const categories = [...Object.keys(categoryConfigKeys), 'poi_highlight'];
 
     let results;
     try {
@@ -116,19 +132,30 @@ class SponsorBlockHandler {
       : null;
     console.debug(this.videoID, 'Got it:', result);
 
+    const allSegments = result?.segments ?? [];
+
     // Only `skip` segments are relevant here. `full` marks the whole video
     // (e.g. a sponsored video) and must never trigger a seek.
-    const segments = (result?.segments ?? []).filter(
-      (seg) => (seg.actionType ?? 'skip') === 'skip'
+    const segments = allSegments.filter(
+      (seg) =>
+        (seg.actionType ?? 'skip') === 'skip' &&
+        getCategoryMode(seg.category) !== 'off'
     );
 
-    if (!segments.length) {
+    this.highlight = configRead('enableSponsorBlockHighlight')
+      ? (allSegments.find((seg) => seg.category === 'poi_highlight') ?? null)
+      : null;
+
+    if (!segments.length && !this.highlight) {
       console.debug(this.videoID, 'No segments found.');
       return;
     }
 
     this.segments = segments;
-    this.skippableCategories = this.getSkippableCategories();
+
+    if (this.highlight) {
+      notify('Highlight available - press [YELLOW] to jump to it', 4000);
+    }
 
     this.scheduleSkipHandler = () => this.scheduleSkip();
     this.durationChangeHandler = () => this.buildOverlay();
@@ -137,10 +164,35 @@ class SponsorBlockHandler {
     this.buildOverlay();
   }
 
-  getSkippableCategories() {
-    return Object.keys(categoryConfigKeys).filter((category) =>
-      configRead(categoryConfigKeys[category])
+  /**
+   * Handle a press of the yellow button. Skips the current "Ask" segment or
+   * jumps to the highlight.
+   * @returns {boolean} Whether the press was used.
+   */
+  handleYellow() {
+    if (!this.video) return false;
+    const time = this.video.currentTime;
+
+    const current = this.segments.find(
+      (seg) =>
+        getCategoryMode(seg.category) === 'manual' &&
+        seg.segment[0] - 0.5 <= time &&
+        time < seg.segment[1]
     );
+    if (current) {
+      const name = barTypes[current.category]?.name || current.category;
+      notify(`Skipping ${name}`);
+      this.video.currentTime = current.segment[1];
+      return true;
+    }
+
+    if (this.highlight && time < this.highlight.segment[0] - 1) {
+      notify('Jumping to highlight');
+      this.video.currentTime = this.highlight.segment[0];
+      return true;
+    }
+
+    return false;
   }
 
   attachVideo() {
@@ -299,9 +351,25 @@ class SponsorBlockHandler {
           console.debug(this.videoID, 'Currently paused, ignoring...');
           return;
         }
-        // Read the settings at skip time so toggles apply mid-video.
-        this.skippableCategories = this.getSkippableCategories();
-        if (!this.skippableCategories.includes(segment.category)) {
+        // Read the settings at skip time so changes apply mid-video.
+        const mode = getCategoryMode(segment.category);
+        const skipName = barTypes[segment.category]?.name || segment.category;
+
+        if (mode === 'manual') {
+          const id = segment.UUID ?? `${start}-${end}`;
+          if (!this.notifiedSegments.has(id)) {
+            this.notifiedSegments.add(id);
+            // Always shown: without it the viewer can't know to press.
+            showNotification(
+              `Press [YELLOW] to skip ${skipName}`,
+              Math.min(Math.max((end - start) * 1000, 2000), 8000),
+              'yellow'
+            );
+          }
+          return;
+        }
+
+        if (mode !== 'skip') {
           console.debug(
             this.videoID,
             'Segment',
@@ -311,9 +379,8 @@ class SponsorBlockHandler {
           return;
         }
 
-        const skipName = barTypes[segment.category]?.name || segment.category;
         console.debug(this.videoID, 'Skipping', segment);
-        showNotification(`Skipping ${skipName}`, 2000, 'indigo');
+        notify(`Skipping ${skipName}`);
         this.video.currentTime = end;
         this.scheduleSkip();
       },
@@ -422,3 +489,8 @@ window.addEventListener(
   },
   false
 );
+
+setColorKeyHandler('yellow', () => {
+  if (!document.body.classList.contains('WEB_PAGE_TYPE_WATCH')) return false;
+  return window.sponsorblock?.handleYellow() ?? false;
+});

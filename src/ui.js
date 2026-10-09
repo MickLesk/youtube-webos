@@ -4,6 +4,7 @@ import {
   configAddChangeListener,
   configRead,
   configWrite,
+  configGetChoices,
   configGetDesc
 } from './config.js';
 import './ui.css';
@@ -84,6 +85,128 @@ function scrollIntoContainer(container, elm) {
   }
 }
 
+/**
+ * A button that cycles through the choices of a config option on OK.
+ * @param {string} key
+ */
+function createConfigChoice(key) {
+  const choices = configGetChoices(key);
+  const elmButton = document.createElement('button');
+  elmButton.className = 'ytaf-ui-choice';
+
+  const render = () => {
+    const value = configRead(key);
+    const choice = choices.find((c) => c.value === value) ?? choices[0];
+    elmButton.textContent = `${configGetDesc(key)}: ${choice.label}`;
+  };
+
+  elmButton.addEventListener('click', () => {
+    const index = choices.findIndex((c) => c.value === configRead(key));
+    configWrite(key, choices[(index + 1) % choices.length].value);
+  });
+
+  configAddChangeListener(key, render);
+  render();
+
+  return elmButton;
+}
+
+/** @param {string} key */
+function createConfigControl(key) {
+  return configGetChoices(key)
+    ? createConfigChoice(key)
+    : createConfigCheckbox(key);
+}
+
+/**
+ * @param {string} title
+ * @param {string[]} keys
+ */
+function createSection(title, keys) {
+  const elmSection = document.createElement('div');
+  const elmTitle = document.createElement('h2');
+  elmTitle.textContent = title;
+  elmSection.appendChild(elmTitle);
+
+  for (const key of keys) {
+    elmSection.appendChild(createConfigControl(key));
+  }
+
+  return elmSection;
+}
+
+/** @type {(() => string | null) | null} */
+let currentChannelProvider = null;
+
+/**
+ * Register a function that returns the channel name of the video being
+ * watched, used by the "block channel" button in the options panel.
+ * @param {() => string | null} provider
+ */
+export function setCurrentChannelProvider(provider) {
+  currentChannelProvider = provider;
+}
+
+function createBlockedChannelsSection() {
+  const elmSection = document.createElement('div');
+  const elmTitle = document.createElement('h2');
+  elmTitle.textContent = 'Blocked channels';
+  elmSection.appendChild(elmTitle);
+
+  const elmList = document.createElement('div');
+  elmSection.appendChild(elmList);
+
+  const elmBlock = document.createElement('button');
+  elmBlock.className = 'ytaf-ui-choice';
+  elmSection.appendChild(elmBlock);
+
+  const getChannel = () => currentChannelProvider?.() || null;
+
+  const render = () => {
+    const blocked = configRead('blockedChannels');
+    elmList.textContent = '';
+
+    if (!blocked.length) {
+      const elmEmpty = document.createElement('small');
+      elmEmpty.textContent = 'None. Open this panel while watching to block.';
+      elmList.appendChild(elmEmpty);
+    }
+
+    for (const name of blocked) {
+      const elmItem = document.createElement('button');
+      elmItem.className = 'ytaf-ui-choice';
+      elmItem.textContent = `Unblock: ${name}`;
+      elmItem.addEventListener('click', () => {
+        configWrite(
+          'blockedChannels',
+          configRead('blockedChannels').filter((c) => c !== name)
+        );
+      });
+      elmList.appendChild(elmItem);
+    }
+
+    const channel = getChannel();
+    elmBlock.style.display =
+      channel && !blocked.includes(channel) ? '' : 'none';
+    elmBlock.textContent = `Block channel: ${channel ?? ''}`;
+  };
+
+  elmBlock.addEventListener('click', () => {
+    const channel = getChannel();
+    if (!channel) return;
+    const blocked = configRead('blockedChannels');
+    if (!blocked.includes(channel)) {
+      configWrite('blockedChannels', [...blocked, channel]);
+    }
+  });
+
+  configAddChangeListener('blockedChannels', render);
+  elmSection.addEventListener('ytaf-refresh', render);
+  render();
+
+  return elmSection;
+}
+
 function createOptionsPanel() {
   const elmContainer = document.createElement('div');
 
@@ -144,29 +267,69 @@ function createOptionsPanel() {
   elmHeading.textContent = 'webOS YouTube Extended';
   elmContainer.appendChild(elmHeading);
 
-  elmContainer.appendChild(createConfigCheckbox('enableAdBlock'));
-  elmContainer.appendChild(createConfigCheckbox('upgradeThumbnails'));
-  elmContainer.appendChild(createConfigCheckbox('hideLogo'));
-  elmContainer.appendChild(createConfigCheckbox('showWatch'));
-  elmContainer.appendChild(createConfigCheckbox('removeShorts'));
-  elmContainer.appendChild(createConfigCheckbox('forceHighResVideo'));
-  elmContainer.appendChild(createConfigCheckbox('forceVp9Codec'));
-  elmContainer.appendChild(createConfigCheckbox('removeEndscreen'));
-  elmContainer.appendChild(createConfigCheckbox('mutePreviews'));
-  elmContainer.appendChild(createConfigCheckbox('autoAccountSelect'));
-  elmContainer.appendChild(createConfigCheckbox('enableLiveCatchup'));
-  elmContainer.appendChild(createConfigCheckbox('enableSponsorBlock'));
+  elmContainer.appendChild(
+    createSection('General', [
+      'enableAdBlock',
+      'autoAccountSelect',
+      'hideYouThere',
+      'mutePreviews'
+    ])
+  );
+
+  elmContainer.appendChild(
+    createSection('Playback', [
+      'defaultPlaybackSpeed',
+      'forceHighResVideo',
+      'forceVp9Codec',
+      'forceOriginalAudio',
+      'disableAutoCaptions',
+      'removeEndscreen',
+      'enableLiveCatchup',
+      'enableReturnDislike'
+    ])
+  );
+
+  elmContainer.appendChild(
+    createSection('Feeds', [
+      'removeShorts',
+      'hideWatchedVideos',
+      'upgradeThumbnails',
+      'enableDeArrow',
+      'enableDeArrowThumbnails'
+    ])
+  );
+
+  elmContainer.appendChild(createBlockedChannelsSection());
+
+  elmContainer.appendChild(
+    createSection('Appearance', [
+      'hideLogo',
+      'showWatch',
+      'showWatchAlways',
+      'oledTheme',
+      'disableAnimations'
+    ])
+  );
+
+  elmContainer.appendChild(
+    createSection('SponsorBlock', ['enableSponsorBlock'])
+  );
 
   const elmBlock = document.createElement('blockquote');
-
-  elmBlock.appendChild(createConfigCheckbox('enableSponsorBlockSponsor'));
-  elmBlock.appendChild(createConfigCheckbox('enableSponsorBlockIntro'));
-  elmBlock.appendChild(createConfigCheckbox('enableSponsorBlockOutro'));
-  elmBlock.appendChild(createConfigCheckbox('enableSponsorBlockInteraction'));
-  elmBlock.appendChild(createConfigCheckbox('enableSponsorBlockSelfPromo'));
-  elmBlock.appendChild(createConfigCheckbox('enableSponsorBlockMusicOfftopic'));
-  elmBlock.appendChild(createConfigCheckbox('enableSponsorBlockPreview'));
-  elmBlock.appendChild(createConfigCheckbox('enableSponsorBlockFiller'));
+  for (const key of [
+    'enableSponsorBlockSponsor',
+    'enableSponsorBlockIntro',
+    'enableSponsorBlockOutro',
+    'enableSponsorBlockInteraction',
+    'enableSponsorBlockSelfPromo',
+    'enableSponsorBlockMusicOfftopic',
+    'enableSponsorBlockPreview',
+    'enableSponsorBlockFiller',
+    'enableSponsorBlockHighlight',
+    'enableSponsorBlockNotifications'
+  ]) {
+    elmBlock.appendChild(createConfigControl(key));
+  }
 
   elmContainer.appendChild(elmBlock);
 
@@ -200,6 +363,9 @@ function showOptionsPanel(visible) {
   if (visible && !optionsPanelVisible) {
     console.debug('Showing and focusing options panel!');
     optionsPanel.style.display = 'block';
+    for (const elm of optionsPanel.querySelectorAll('div')) {
+      elm.dispatchEvent(new CustomEvent('ytaf-refresh'));
+    }
     optionsPanel.focus();
     optionsPanelVisible = true;
   } else if (!visible && optionsPanelVisible) {
@@ -211,6 +377,21 @@ function showOptionsPanel(visible) {
 }
 
 window.ytaf_showOptionsPanel = showOptionsPanel;
+
+let colorKeyConsumed = false;
+
+/** @type {Map<string, () => boolean>} */
+const colorKeyHandlers = new Map();
+
+/**
+ * Handle presses of a color button outside the options panel. The handler
+ * returns `true` if it consumed the press; otherwise YouTube gets the key.
+ * @param {'red' | 'yellow'} color
+ * @param {() => boolean} handler
+ */
+export function setColorKeyHandler(color, handler) {
+  colorKeyHandlers.set(color, handler);
+}
 
 const eventHandler = (evt) => {
   console.debug(
@@ -241,6 +422,20 @@ const eventHandler = (evt) => {
       initAudioOnlyToggle();
     }
     return false;
+  }
+
+  const color = getKeyColor(evt.charCode);
+  const handler = color && colorKeyHandlers.get(color);
+  if (handler && !optionsPanelVisible) {
+    // Decide on keydown and swallow the matching keypress/keyup as well.
+    if (evt.type === 'keydown') {
+      colorKeyConsumed = handler();
+    }
+    if (colorKeyConsumed) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      return false;
+    }
   }
   return true;
 };
@@ -339,10 +534,10 @@ let audioOnlyEnabled = false;
 let overlayObserver = null;
 
 async function initAudioOnlyToggle() {
-  const elVideo = await requireElement('video', HTMLVideoElement);
-
   audioOnlyEnabled = !audioOnlyEnabled;
-  elVideo.style.visibility = audioOnlyEnabled ? 'hidden' : '';
+  // A class on <body> survives YouTube rewriting the <video> style when the
+  // next video in a playlist starts, unlike an inline style.
+  document.body.classList.toggle('ytaf-audio-only', audioOnlyEnabled);
 
   const AUDIO_OVERLAY_SELECTOR = '.ytLrAudioPlayerOverlayAudioMode';
   const YTAF_OVERLAY_CLASS = 'ytaf-ui-watchControl-overlayMessage';
