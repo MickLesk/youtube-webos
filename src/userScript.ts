@@ -17,6 +17,7 @@ import './app_api/index';
 import './adblock.js';
 import './hooks/json-stringify';
 import './shorts.js';
+import './player-response';
 import './sponsorblock.js';
 import './ui.js';
 import './font-fix.css';
