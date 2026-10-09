@@ -65,6 +65,25 @@ function createConfigCheckbox(key) {
   return elmLabel;
 }
 
+/**
+ * Scroll `container` so that `elm` is fully visible. Done manually because
+ * scrollIntoView options are not supported on older webOS versions.
+ * @param {HTMLElement} container
+ * @param {EventTarget | null} elm
+ */
+function scrollIntoContainer(container, elm) {
+  if (!(elm instanceof HTMLElement) || elm === container) return;
+
+  const containerRect = container.getBoundingClientRect();
+  const elmRect = elm.getBoundingClientRect();
+
+  if (elmRect.top < containerRect.top) {
+    container.scrollTop -= containerRect.top - elmRect.top;
+  } else if (elmRect.bottom > containerRect.bottom) {
+    container.scrollTop += elmRect.bottom - containerRect.bottom;
+  }
+}
+
 function createOptionsPanel() {
   const elmContainer = document.createElement('div');
 
@@ -74,7 +93,10 @@ function createOptionsPanel() {
 
   elmContainer.addEventListener(
     'focus',
-    () => console.debug('Options panel focused!'),
+    (evt) => {
+      console.debug('Options panel focused!');
+      scrollIntoContainer(elmContainer, evt.target);
+    },
     true
   );
   elmContainer.addEventListener(
