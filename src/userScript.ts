@@ -33,3 +33,4 @@ import './block-webos-cast';
 import './auto-account-select';
 import './live-catchup';
 import './mute-previews';
+import './playback-speed';

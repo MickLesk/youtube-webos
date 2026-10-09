@@ -79,4 +79,7 @@ export interface YTPlayer extends HTMLElement {
   isInline(): boolean;
 
   getVideoStats(): VideoStats;
+
+  /** Not available on every client version. */
+  setPlaybackRate?(rate: number): void;
 }
