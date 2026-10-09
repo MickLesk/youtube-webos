@@ -6,6 +6,7 @@ class Watch {
   #watch;
   #timer;
   #attrChanges;
+  #player;
   #PLAYER_SELECTOR = 'ytlr-watch-default';
 
   constructor() {
@@ -39,14 +40,20 @@ class Watch {
     }, nextSeg);
   }
 
+  refresh() {
+    if (this.#player) this.changeVisibility(this.#player);
+  }
+
   playerAppear(video) {
+    this.#player = video;
     this.changeVisibility(video);
     this.playerObserver(video);
   }
 
   changeVisibility(video) {
     const focused = video.getAttribute('hybridnavfocusable') === 'true';
-    this.#watch.style.display = focused ? 'none' : 'block';
+    const always = configRead('showWatchAlways');
+    this.#watch.style.display = focused && !always ? 'none' : 'block';
   }
 
   async playerEvents() {
@@ -87,4 +94,8 @@ toggleWatch(configRead('showWatch'));
 
 configAddChangeListener('showWatch', (evt) => {
   toggleWatch(evt.detail.newValue);
+});
+
+configAddChangeListener('showWatchAlways', () => {
+  watchInstance?.refresh();
 });

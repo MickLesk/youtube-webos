@@ -1,0 +1,21 @@
+/* Pure black backgrounds for OLED screens. */
+body.ytaf-oled,
+body.ytaf-oled #container,
+body.ytaf-oled ytlr-guide-response yt-focus-container {
+  background-color: #000 !important;
+}
+
+body.ytaf-oled .ytaf-ui-container {
+  background: rgba(0, 0, 0, 0.95);
+}
+
+/* Skip UI transitions and animations, e.g. on slower TVs. */
+body.ytaf-no-animations *,
+body.ytaf-no-animations *::before,
+body.ytaf-no-animations *::after {
+  /* Not 0s, so transitionend/animationend still fire for YouTube's logic. */
+  transition-duration: 0.001s !important;
+  transition-delay: 0s !important;
+  animation-duration: 0.001s !important;
+  animation-delay: 0s !important;
+}
