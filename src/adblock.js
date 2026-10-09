@@ -44,7 +44,7 @@ JSON.parse = function () {
   if (homeSectionListRenderer?.contents) {
     // Drop the full width ad card, usually appears at the top of the page
     homeSectionListRenderer.contents = homeSectionListRenderer.contents.filter(
-      (elm) => !elm.tvMastheadRenderer
+      (elm) => !elm?.tvMastheadRenderer
     );
 
     // Drop ad tile from the horizontal shelf
@@ -73,18 +73,22 @@ JSON.parse = function () {
 function removeAdSlotRenderer(sectionListRenderer) {
   // sectionListRenderer.contents[*].adSlotRenderer
   sectionListRenderer.contents = sectionListRenderer.contents.filter(
-    (elm) => !elm.adSlotRenderer
+    (elm) => !elm?.adSlotRenderer
   );
 
   // sectionListRenderer.contents[*].shelfRenderer.content.horizontalListRenderer.items[*].adSlotRenderer
   const contentsWithShelfRenderer = sectionListRenderer.contents.filter(
-    (elm) => elm.shelfRenderer
+    (elm) => elm?.shelfRenderer
   );
   contentsWithShelfRenderer.forEach((content) => {
+    // Not every shelf is a horizontal list (e.g. grid shelves), so guard
+    // against missing renderers instead of throwing inside JSON.parse.
     const horizontalRenderer =
-      content.shelfRenderer.content.horizontalListRenderer;
+      content.shelfRenderer?.content?.horizontalListRenderer;
+    if (!Array.isArray(horizontalRenderer?.items)) return;
+
     horizontalRenderer.items = horizontalRenderer.items.filter(
-      (elm) => !elm.adSlotRenderer
+      (elm) => !elm?.adSlotRenderer
     );
   });
 }
