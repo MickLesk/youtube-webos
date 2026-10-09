@@ -71,6 +71,13 @@ const configOptions = new Map([
     }
   ],
   [
+    'forceVp9Codec',
+    {
+      default: false,
+      desc: 'Prefer VP9 over AV1 video codec'
+    }
+  ],
+  [
     'removeEndscreen',
     {
       default: false,
