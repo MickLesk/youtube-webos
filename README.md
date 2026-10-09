@@ -32,6 +32,10 @@
 - YouTube Logo Removal
 - Remove end screens
 - Bypass account selector screen
+- Live stream catch-up (skip to live edge)
+- Prefer VP9 over AV1 codec
+- Mute video previews
+- Version offset that stops the LG Content Store from replacing the app
 
 > [!NOTE]
 > Press the 🟩 **Green** button on your remote to access the configuration screen.
