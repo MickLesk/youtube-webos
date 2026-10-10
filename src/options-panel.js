@@ -587,65 +587,122 @@ function createOptionsPanel() {
     true
   );
 
-  elmContainer.addEventListener(
-    'keydown',
-    (evt) => {
-      const active = document.activeElement;
-      const typing =
-        active instanceof HTMLInputElement && active.type === 'text';
+  const onKeyDown = (evt) => {
+    const active = document.activeElement;
+    const typing = active instanceof HTMLInputElement && active.type === 'text';
 
-      if (evt.keyCode === KEY_BACK || evt.keyCode === KEY_BACK_WEBOS) {
-        hide();
-      } else if (evt.keyCode in ARROW_KEY_CODE) {
-        // Let the cursor move inside a text field.
-        const horizontal = evt.keyCode === 37 || evt.keyCode === 39;
-        if (typing && horizontal) return;
+    if (evt.keyCode === KEY_BACK || evt.keyCode === KEY_BACK_WEBOS) {
+      hide();
+    } else if (evt.keyCode in ARROW_KEY_CODE) {
+      // Let the cursor move inside a text field.
+      const horizontal = evt.keyCode === 37 || evt.keyCode === 39;
+      if (typing && horizontal) return;
 
-        // Keep vertical movement between the tab row and the page predictable:
-        // down from a tab enters the page at its top, up from the first
-        // control returns to the active tab.
-        const focusables = pages[currentPage].querySelectorAll('input, button');
-        let first = null;
-        for (let i = 0; i < focusables.length && !first; i++) {
-          if (focusables[i].offsetParent !== null) first = focusables[i];
-        }
-        if (evt.keyCode === 40 && tabs.includes(active) && first) {
-          first.focus();
-        } else if (evt.keyCode === 38 && active === first) {
-          tabs[currentPage].focus();
-        } else {
-          navigate(ARROW_KEY_CODE[evt.keyCode]);
-        }
-      } else if (evt.keyCode === KEY_ENTER) {
-        /**
-         * The YouTube app generates these "OK" events from clicks (including
-         * with the Magic Remote), and we don't want to send a duplicate click
-         * event for those. Youtube uses the `Event` class instead of
-         * `KeyboardEvent` so we check for that.
-         * See issue #143 and #200 for context.
-         */
-        if (typing) {
-          // Handled by the field itself (adds the entry).
-          evt.stopPropagation();
-          return;
-        }
-        if (evt instanceof KeyboardEvent) active?.click();
-      } else if (typing) {
-        // Regular typing: keep it away from YouTube but let the field have it.
+      // Keep vertical movement between the tab row and the page predictable:
+      // down from a tab enters the page at its top, up from the first
+      // control returns to the active tab.
+      const focusables = pages[currentPage].querySelectorAll('input, button');
+      let first = null;
+      for (let i = 0; i < focusables.length && !first; i++) {
+        if (focusables[i].offsetParent !== null) first = focusables[i];
+      }
+      if (evt.keyCode === 40 && tabs.includes(active) && first) {
+        first.focus();
+      } else if (evt.keyCode === 38 && active === first) {
+        tabs[currentPage].focus();
+      } else {
+        navigate(ARROW_KEY_CODE[evt.keyCode]);
+      }
+    } else if (evt.keyCode === KEY_ENTER) {
+      /**
+       * The YouTube app generates these "OK" events from clicks (including
+       * with the Magic Remote), and we don't want to send a duplicate click
+       * event for those. Youtube uses the `Event` class instead of
+       * `KeyboardEvent` so we check for that.
+       * See issue #143 and #200 for context.
+       */
+      if (typing) {
+        // Handled by the field itself (adds the entry).
         evt.stopPropagation();
         return;
-      } else {
-        // Green and other color buttons are handled globally.
-        return;
       }
-
-      evt.preventDefault();
+      if (evt instanceof KeyboardEvent) active?.click();
+    } else if (typing) {
+      // Regular typing: keep it away from YouTube but let the field have it.
       evt.stopPropagation();
+      return;
+    } else {
+      // Green and other color buttons are handled globally.
+      return;
+    }
+
+    evt.preventDefault();
+    evt.stopPropagation();
+  };
+
+  let visible = false;
+  let lastFocused = null;
+  let lastKeyDown = null;
+
+  elmContainer.addEventListener(
+    'focus',
+    (evt) => {
+      lastFocused = evt.target;
     },
     true
   );
 
-  let visible = false;
+  /** Pull focus back if YouTube moved it while the panel is open. */
+  const reclaimFocus = () => {
+    if (elmContainer.contains(document.activeElement)) return;
+    const target =
+      lastFocused && elmContainer.contains(lastFocused)
+        ? lastFocused
+        : tabs[currentPage];
+    target.focus();
+  };
+
+  // Listen on window in the capture phase so keys reach the panel before
+  // YouTube, even when YouTube took the focus (e.g. on the account screen).
+  const isColorKey = (evt) => evt.keyCode >= 403 && evt.keyCode <= 406;
+  const isTextField = (elm) =>
+    elm instanceof HTMLInputElement && elm.type === 'text';
+  window.addEventListener(
+    'keydown',
+    (evt) => {
+      if (!visible || isColorKey(evt)) return;
+      lastKeyDown = evt.keyCode;
+      reclaimFocus();
+      onKeyDown(evt);
+      // Never let YouTube navigate in the background. Text fields get
+      // their keys themselves (onKeyDown stops them there).
+      if (!isTextField(document.activeElement)) evt.stopPropagation();
+    },
+    true
+  );
+  for (const type of ['keypress', 'keyup']) {
+    window.addEventListener(
+      type,
+      (evt) => {
+        if (isColorKey(evt)) return;
+        // Also the release of Back that just closed the panel.
+        if (visible || evt.keyCode === lastKeyDown) evt.stopPropagation();
+        if (evt.type === 'keyup' && evt.keyCode === lastKeyDown) {
+          lastKeyDown = null;
+        }
+      },
+      true
+    );
+  }
+  document.addEventListener(
+    'focusin',
+    (evt) => {
+      if (visible && !elmContainer.contains(evt.target)) {
+        setTimeout(reclaimFocus, 0);
+      }
+    },
+    true
+  );
 
   function show() {
     if (visible) return;

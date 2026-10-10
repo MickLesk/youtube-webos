@@ -235,6 +235,9 @@ const de: Record<string, string> = {
   'ui.reset': 'Alle Einstellungen zurücksetzen',
   'ui.resetConfirm': 'Zum Zurücksetzen erneut OK drücken',
   'ui.keyGreen': 'Einstellungen',
+  'ui.settingsEntry': 'YouTube Extended',
+  'ui.settingsEntrySummary':
+    'Werbeblocker, SponsorBlock, Feeds, Tasten und mehr',
   'ui.addToQueue': 'Zur Warteschlange hinzufügen',
   'ui.notInterested': 'Kein Interesse',
   'ui.dontRecommendChannel': 'Kanal nicht empfehlen',

@@ -18,6 +18,7 @@ import './adblock.js';
 import './hooks/json-stringify';
 import './feed-filters';
 import './long-press-menu';
+import './yt-settings-entry';
 import './player-response';
 import './sponsorblock.js';
 import './ui.js';
