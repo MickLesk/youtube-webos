@@ -329,6 +329,39 @@ const de: Record<string, string> = {
   'quick.chapter': 'Nächstes Kapitel',
   'quick.queue': 'Nächstes aus Warteschlange ({count})',
   'quick.pip': 'Bild-in-Bild',
+  'opt.subtitleAutoTranslate': 'Untertitel bei Bedarf automatisch übersetzen',
+  'opt.subtitleSize': 'Untertitel-Größe',
+  'opt.subtitleBackground': 'Untertitel-Hintergrund',
+  'opt.subtitlePosition': 'Untertitel-Position',
+  'opt.perAccountSettings': 'Eigene Einstellungen pro YouTube-Konto',
+  'opt.subscriptionsOnHome': 'Neueste Abo-Videos oben auf der Startseite',
+  'help.subtitleAutoTranslate':
+    'Hat ein Video keine Untertitel in deiner Sprache, wird YouTubes automatische Übersetzung einer anderen Spur genutzt.',
+  'help.subtitleSize': 'Größe der Untertitel-Schrift.',
+  'help.subtitleBackground':
+    'Hintergrund hinter den Untertiteln. „Keiner“ zeichnet stattdessen einen Umriss und verdeckt weniger vom Bild.',
+  'help.subtitlePosition':
+    'Schiebt Untertitel nach oben, z. B. wenn sie eingeblendeten Text oder die Fortschrittsleiste verdecken.',
+  'help.perAccountSettings':
+    'Jedes YouTube-Konto bekommt eigene Einstellungen (Filter, Tempo, gesperrte Kanäle). Ein neues Konto startet mit einer Kopie der aktuellen Einstellungen.',
+  'help.subscriptionsOnHome':
+    'Fügt oben auf der Startseite eine Reihe mit den neuesten Videos deiner Abos ein. Sie wird alle 15 Minuten im Hintergrund aktualisiert.',
+  'choice.Small': 'Klein',
+  'choice.Large': 'Groß',
+  'choice.Extra large': 'Sehr groß',
+  'choice.None (outlined text)': 'Keiner (Umriss)',
+  'choice.Semi-transparent': 'Halbtransparent',
+  'choice.Black': 'Schwarz',
+  'choice.A bit higher': 'Etwas höher',
+  'choice.Top': 'Oben',
+  'ui.channelResolution': 'Max. Auflösung für diesen Kanal: {value}',
+  'ui.timeSaved': 'Zeit gespart: {time} ({count} Segmente übersprungen)',
+  'ui.resetTimeSaved': 'Gesparte Zeit zurücksetzen',
+  'ui.profileUnknown': 'Konto-Einstellungen: Konto nicht erkannt',
+  'ui.profileActive': 'Konto-Einstellungen: Profil …{id}',
+  'ui.homeSubscriptions': 'Neu in deinen Abos',
+  'selftest.timing':
+    'Verarbeitung: {count} Antworten, im Schnitt {avg} ms, maximal {max} ms',
 
   // SponsorBlock segment names used in notifications
   'segment.sponsor': 'Sponsor',

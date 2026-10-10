@@ -1,0 +1,33 @@
+/* Caption text on the TV player uses the same classes as the web player. */
+body.ytaf-sub-small .ytp-caption-segment {
+  font-size: 75% !important;
+}
+body.ytaf-sub-large .ytp-caption-segment {
+  font-size: 125% !important;
+}
+body.ytaf-sub-xlarge .ytp-caption-segment {
+  font-size: 150% !important;
+}
+
+body.ytaf-sub-bg-none .ytp-caption-segment {
+  background: transparent !important;
+  text-shadow:
+    0 0 0.15em black,
+    0 0 0.15em black,
+    0 0 0.15em black !important;
+}
+body.ytaf-sub-bg-semi .ytp-caption-segment {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+body.ytaf-sub-bg-solid .ytp-caption-segment {
+  background: black !important;
+}
+
+/* Move bottom captions up so they don't cover burned-in text or the UI. */
+body.ytaf-sub-raised .caption-window.ytp-caption-window-bottom {
+  margin-bottom: 8% !important;
+}
+body.ytaf-sub-top .caption-window.ytp-caption-window-bottom {
+  top: 5% !important;
+  bottom: auto !important;
+}

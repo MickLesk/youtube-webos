@@ -1,5 +1,6 @@
 /**
- * Settings remembered per channel: playback speed and SponsorBlock on/off.
+ * Settings remembered per channel: playback speed, maximum resolution and
+ * SponsorBlock on/off.
  * Changed in the settings panel while a video of that channel is open.
  */
 import { configRead, configWrite } from './config';
@@ -9,6 +10,8 @@ export interface ChannelSettings {
   speed?: number;
   /** SponsorBlock is skipped for this channel. */
   noSponsorBlock?: boolean;
+  /** Highest video height, overrides the global maximum resolution. */
+  maxResolution?: number;
 }
 
 type ChannelMap = Record<string, ChannelSettings>;

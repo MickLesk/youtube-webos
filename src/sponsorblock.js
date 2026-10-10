@@ -1,4 +1,5 @@
 import { sponsorBlockOffForCurrentChannel } from './channel-settings';
+import { recordSkip } from './sponsorblock-stats';
 import sha256 from 'tiny-sha256';
 import { configRead } from './config';
 import { getButtonLabel, setColorActionHandler, showNotification } from './ui';
@@ -211,6 +212,7 @@ class SponsorBlockHandler {
           name: segmentName(current.category)
         })
       );
+      recordSkip(current.segment[1] - this.video.currentTime);
       this.video.currentTime = current.segment[1];
       return true;
     }
@@ -429,6 +431,7 @@ class SponsorBlockHandler {
 
         console.debug(this.videoID, 'Skipping', segment);
         notify(t('msg.skipping', 'Skipping {name}', { name: skipName }));
+        recordSkip(end - this.video.currentTime);
         this.video.currentTime = end;
         this.scheduleSkip();
       },

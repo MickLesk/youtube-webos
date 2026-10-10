@@ -6,6 +6,7 @@
  * codecs are also reported as unsupported, so the player doesn't fall back
  * to them on its own.
  */
+import { getChannelSettings } from './channel-settings';
 import { configRead } from './config';
 import { addParseHandler } from './hooks/json-parse';
 
@@ -28,8 +29,9 @@ function preferredCodec(): Codec | null {
   return value === 'vp9' || value === 'avc' || value === 'av1' ? value : null;
 }
 
-function maxHeight(): number | null {
-  const value = Number(configRead('maxResolution'));
+function maxHeight(channel: string | null): number | null {
+  const own = getChannelSettings(channel).maxResolution;
+  const value = own ?? Number(configRead('maxResolution'));
   return value > 0 ? value : null;
 }
 
@@ -65,7 +67,8 @@ function filterVideo(
 
 addParseHandler('video-codec', (res) => {
   const codec = preferredCodec();
-  const height = maxHeight();
+  const author = (res.videoDetails as { author?: unknown } | undefined)?.author;
+  const height = maxHeight(typeof author === 'string' ? author.trim() : null);
   if (!codec && !height) return;
 
   const streamingData = res.streamingData as

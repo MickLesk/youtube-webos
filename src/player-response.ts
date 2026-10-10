@@ -82,6 +82,47 @@ function disableAutoCaptions(res: Json) {
  * Turn on subtitles in the preferred language when the video has them.
  * Uploaded tracks win over auto-generated ones.
  */
+/**
+ * No subtitles in the wanted language: add YouTube's automatic translation
+ * of the best available track (the `tlang` parameter of the subtitle URL).
+ * Returns the index of the new track, or -1.
+ */
+function addTranslatedTrack(
+  renderer: Json,
+  tracks: unknown[],
+  language: string
+): number {
+  const translations = asArray(renderer.translationLanguages) ?? [];
+  const target = translations.find(
+    (lang) => isObject(lang) && lang.languageCode === language
+  );
+  if (!isObject(target)) return -1;
+
+  // Prefer a manually created source track over automatic speech recognition.
+  const source =
+    tracks.find(
+      (track) => isObject(track) && track.kind !== 'asr' && track.isTranslatable
+    ) ?? tracks.find((track) => isObject(track) && track.isTranslatable);
+  if (!isObject(source) || typeof source.baseUrl !== 'string') return -1;
+
+  const sourceName = (source.name as Json | undefined)?.simpleText;
+  const targetName = (target.languageName as Json | undefined)?.simpleText;
+  const translated: Json = {
+    ...source,
+    baseUrl: `${source.baseUrl}&tlang=${encodeURIComponent(language)}`,
+    languageCode: language,
+    vssId: `${String(source.vssId ?? '')}.${language}`,
+    name: {
+      simpleText: `${String(sourceName ?? source.languageCode)} >> ${String(
+        targetName ?? language
+      )}`
+    }
+  };
+  delete translated.kind;
+  tracks.push(translated);
+  return tracks.length - 1;
+}
+
 function preferSubtitleLanguage(res: Json) {
   const language = configRead('subtitleLanguage');
   if (typeof language !== 'string' || language === 'none') return;
@@ -102,6 +143,9 @@ function preferSubtitleLanguage(res: Json) {
 
   let index = tracks.findIndex((track) => matches(track, false));
   if (index === -1) index = tracks.findIndex((track) => matches(track, true));
+  if (index === -1 && configRead('subtitleAutoTranslate')) {
+    index = addTranslatedTrack(renderer, tracks, language);
+  }
   if (index === -1) return;
 
   for (const audioTrack of asArray(renderer.audioTracks) ?? []) {

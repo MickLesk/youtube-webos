@@ -362,6 +362,7 @@ const configOptions = new Map([
       desc: 'Maximum resolution',
       choices: [
         { value: 0, label: 'No limit' },
+        { value: 4320, label: '8K' },
         { value: 2160, label: '4K' },
         { value: 1440, label: '1440p' },
         { value: 1080, label: '1080p' },
@@ -401,7 +402,57 @@ const configOptions = new Map([
     { default: false, desc: 'Subscriptions: only new videos' }
   ],
   ['numberKeySeek', { default: true, desc: 'Number keys jump to 0-90 %' }],
-  ['twemoji', { default: false, desc: 'Show emoji as images (older TVs)' }]
+  ['twemoji', { default: false, desc: 'Show emoji as images (older TVs)' }],
+  [
+    'subscriptionsOnHome',
+    { default: false, desc: 'Newest subscription videos on top of Home' }
+  ],
+  [
+    'perAccountSettings',
+    { default: false, desc: 'Separate settings for each YouTube account' }
+  ],
+  [
+    'subtitleAutoTranslate',
+    { default: true, desc: 'Translate subtitles automatically if needed' }
+  ],
+  [
+    'subtitleSize',
+    {
+      default: 'default',
+      desc: 'Subtitle size',
+      choices: [
+        { value: 'default', label: 'YouTube default' },
+        { value: 'small', label: 'Small' },
+        { value: 'large', label: 'Large' },
+        { value: 'xlarge', label: 'Extra large' }
+      ]
+    }
+  ],
+  [
+    'subtitleBackground',
+    {
+      default: 'default',
+      desc: 'Subtitle background',
+      choices: [
+        { value: 'default', label: 'YouTube default' },
+        { value: 'bg-none', label: 'None (outlined text)' },
+        { value: 'bg-semi', label: 'Semi-transparent' },
+        { value: 'bg-solid', label: 'Black' }
+      ]
+    }
+  ],
+  [
+    'subtitlePosition',
+    {
+      default: 'default',
+      desc: 'Subtitle position',
+      choices: [
+        { value: 'default', label: 'YouTube default' },
+        { value: 'raised', label: 'A bit higher' },
+        { value: 'top', label: 'Top' }
+      ]
+    }
+  ]
 ]);
 
 /** Longer explanations, shown at the bottom of the panel on focus. */
@@ -435,6 +486,17 @@ const optionHelp = {
   disableAutoCaptions:
     'YouTube may switch subtitles on when the audio language differs from yours. This stops that.',
   removeEndscreen: 'Hides the video suggestions shown over the last seconds.',
+  subscriptionsOnHome:
+    'Adds a row with the newest videos from your subscriptions at the top of Home. It is refreshed in the background every 15 minutes.',
+  perAccountSettings:
+    'Each YouTube account gets its own settings (filters, speed, blocked channels). A new account starts with a copy of the current settings.',
+  subtitleAutoTranslate:
+    "When the video has no subtitles in your chosen language, YouTube's automatic translation of another track is used.",
+  subtitleSize: 'Size of the subtitle text.',
+  subtitleBackground:
+    'Background behind subtitles. "None" draws an outline instead, which covers less of the picture.',
+  subtitlePosition:
+    'Moves subtitles up, e.g. when they cover burned-in text or the progress bar.',
   checkForUpdates:
     'Looks for a newer release on GitHub once a day and shows a notice. Nothing is installed automatically.',
   rememberPosition:
@@ -537,8 +599,11 @@ const configFrags = (() => {
   return ret;
 })();
 
-function loadStoredConfig() {
-  const storage = window.localStorage.getItem(CONFIG_KEY);
+/** Key of the settings in use: the shared one or an account profile. */
+let storageKey = CONFIG_KEY;
+
+function loadStoredConfig(key = storageKey) {
+  const storage = window.localStorage.getItem(key);
 
   if (storage === null) {
     console.info('Config not set; using defaults.');
@@ -594,8 +659,65 @@ export function configGetHelp(key) {
 
 /** Remove all stored settings. Takes full effect after a reload. */
 export function configResetAll() {
-  window.localStorage.removeItem(CONFIG_KEY);
+  window.localStorage.removeItem(storageKey);
   localConfig = Object.create(defaultConfig);
+}
+
+/* ---------------------------- Account profiles --------------------------- */
+
+/** Options stored once per TV, outside of account profiles. */
+const GLOBAL_KEY = 'ytaf-global';
+const GLOBAL_OPTIONS = ['perAccountSettings'];
+
+function readGlobal() {
+  try {
+    return JSON.parse(window.localStorage.getItem(GLOBAL_KEY) ?? '{}') ?? {};
+  } catch {
+    return {};
+  }
+}
+
+let activeProfile = null;
+
+/** Id of the account profile in use, or `null` for the shared settings. */
+export function configActiveProfile() {
+  return activeProfile;
+}
+
+/**
+ * Switch to the settings of an account (`null`: shared settings). A new
+ * profile starts as a copy of the settings in use. Listeners are told about
+ * every option that changes.
+ * @param {string | null} profileId
+ */
+export function configUseProfile(profileId) {
+  const key = profileId ? `${CONFIG_KEY}:${profileId}` : CONFIG_KEY;
+  if (key === storageKey) return;
+
+  const previous = localConfig;
+  let next = loadStoredConfig(key);
+  if (!next) {
+    next = JSON.parse(JSON.stringify(Object.assign({}, previous)));
+    window.localStorage[key] = JSON.stringify(next);
+  }
+
+  storageKey = key;
+  activeProfile = profileId;
+  localConfig = next;
+
+  for (const optionKey of configOptions.keys()) {
+    if (GLOBAL_OPTIONS.includes(optionKey)) continue;
+    const valueOf = (cfg) =>
+      cfg[optionKey] !== undefined ? cfg[optionKey] : defaultConfig[optionKey];
+    const oldValue = valueOf(previous);
+    const newValue = valueOf(next);
+    if (JSON.stringify(oldValue) === JSON.stringify(newValue)) continue;
+    configFrags[optionKey].dispatchEvent(
+      new CustomEvent('ytafConfigChange', {
+        detail: { key: optionKey, newValue, oldValue }
+      })
+    );
+  }
 }
 
 export function configGetDesc(key) {
@@ -609,6 +731,11 @@ export function configGetDesc(key) {
 export function configRead(key) {
   if (!configExists(key)) {
     throw new Error('tried to read unknown config key: ' + key);
+  }
+
+  if (GLOBAL_OPTIONS.includes(key)) {
+    const value = readGlobal()[key];
+    return value !== undefined ? value : defaultConfig[key];
   }
 
   if (localConfig[key] === undefined) {
@@ -640,12 +767,20 @@ export function configWrite(key, value) {
     throw new Error('tried to write unknown config key: ' + key);
   }
 
-  const oldValue =
-    localConfig[key] !== undefined ? localConfig[key] : defaultConfig[key];
+  let oldValue;
+  if (GLOBAL_OPTIONS.includes(key)) {
+    const global = readGlobal();
+    oldValue = global[key] !== undefined ? global[key] : defaultConfig[key];
+    global[key] = value;
+    window.localStorage[GLOBAL_KEY] = JSON.stringify(global);
+  } else {
+    oldValue =
+      localConfig[key] !== undefined ? localConfig[key] : defaultConfig[key];
+    localConfig[key] = value;
+    window.localStorage[storageKey] = JSON.stringify(localConfig);
+  }
 
   console.info('Changing key', key, 'from', oldValue, 'to', value);
-  localConfig[key] = value;
-  window.localStorage[CONFIG_KEY] = JSON.stringify(localConfig);
 
   configFrags[key].dispatchEvent(
     new CustomEvent('ytafConfigChange', {

@@ -21,6 +21,11 @@ import {
   removeChannelSettings,
   setChannelSetting
 } from './channel-settings';
+import {
+  formatDuration,
+  getSkipStats,
+  resetSkipStats
+} from './sponsorblock-stats';
 import { t } from './i18n';
 import { clearLogEntries, getLogEntries } from './logger';
 
@@ -275,10 +280,18 @@ function createBlockedChannelsSection() {
 /* --------------------------- Channel settings --------------------------- */
 
 const CHANNEL_SPEEDS = [undefined, 0.75, 1, 1.25, 1.5, 1.75, 2];
+const CHANNEL_RESOLUTIONS = [undefined, 2160, 1440, 1080, 720, 480];
+
+function resolutionLabel(height) {
+  return height === 2160 ? '4K' : `${height}p`;
+}
 
 function describeChannelSettings(settings) {
   const parts = [];
   if (settings.speed) parts.push(`${settings.speed}x`);
+  if (settings.maxResolution) {
+    parts.push(resolutionLabel(settings.maxResolution));
+  }
   if (settings.noSponsorBlock) {
     parts.push(t('ui.channelNoSponsorBlock', 'no SponsorBlock'));
   }
@@ -304,6 +317,19 @@ function createChannelSection() {
     },
     'channelSettings'
   );
+  const elmResolution = createButton(
+    '',
+    () => {
+      const channel = getChannel();
+      if (!channel) return;
+      const current = getChannelSettings(channel).maxResolution;
+      const index = CHANNEL_RESOLUTIONS.indexOf(current);
+      const next =
+        CHANNEL_RESOLUTIONS[(index + 1) % CHANNEL_RESOLUTIONS.length];
+      setChannelSetting(channel, 'maxResolution', next);
+    },
+    'channelSettings'
+  );
   const elmSponsor = createButton(
     '',
     () => {
@@ -315,6 +341,7 @@ function createChannelSection() {
     'channelSettings'
   );
   elmSection.appendChild(elmSpeed);
+  elmSection.appendChild(elmResolution);
   elmSection.appendChild(elmSponsor);
 
   const elmList = document.createElement('div');
@@ -327,6 +354,7 @@ function createChannelSection() {
       : t('ui.channelSettings', 'Channel settings');
     elmSpeed.style.display = channel ? '' : 'none';
     elmSponsor.style.display = channel ? '' : 'none';
+    elmResolution.style.display = channel ? '' : 'none';
 
     if (channel) {
       const settings = getChannelSettings(channel);
@@ -336,6 +364,15 @@ function createChannelSection() {
         {
           speed: settings.speed
             ? `${settings.speed}x`
+            : t('ui.default', 'Default')
+        }
+      );
+      elmResolution.textContent = t(
+        'ui.channelResolution',
+        'Max. resolution for this channel: {value}',
+        {
+          value: settings.maxResolution
+            ? resolutionLabel(settings.maxResolution)
             : t('ui.default', 'Default')
         }
       );
@@ -378,6 +415,35 @@ function createChannelSection() {
   elmSection.addEventListener('ytaf-refresh', render);
   render();
 
+  return elmSection;
+}
+
+/* ------------------------- SponsorBlock stats ------------------------- */
+
+function createSkipStatsSection() {
+  const elmSection = document.createElement('div');
+  const elmStats = document.createElement('div');
+  elmStats.className = 'ytaf-ui-log';
+  elmSection.appendChild(elmStats);
+
+  const render = () => {
+    const stats = getSkipStats();
+    elmStats.textContent = t(
+      'ui.timeSaved',
+      'Time saved: {time} ({count} segments skipped)',
+      { time: formatDuration(stats.seconds), count: stats.count }
+    );
+  };
+
+  elmSection.appendChild(
+    createButton(t('ui.resetTimeSaved', 'Reset time saved'), () => {
+      resetSkipStats();
+      render();
+    })
+  );
+
+  elmSection.addEventListener('ytaf-refresh', render);
+  render();
   return elmSection;
 }
 
@@ -497,7 +563,8 @@ const PAGES = [
         'hideNags',
         'mutePreviews',
         'enhancedLongPress',
-        'checkForUpdates'
+        'checkForUpdates',
+        'perAccountSettings'
       ])
   },
   {
@@ -513,6 +580,10 @@ const PAGES = [
         'forceOriginalAudio',
         'disableAutoCaptions',
         'subtitleLanguage',
+        'subtitleAutoTranslate',
+        'subtitleSize',
+        'subtitleBackground',
+        'subtitlePosition',
         'seekStep',
         'enableScrollSeek',
         'showStats',
@@ -535,6 +606,7 @@ const PAGES = [
         'removeShorts',
         'hideWatchedVideos',
         'cleanSubscriptions',
+        'subscriptionsOnHome',
         'hideLiveStreams',
         'hideUpcoming',
         'hideMembersOnly',
@@ -595,6 +667,7 @@ const PAGES = [
         'sponsorBlockSkipOnce',
         'enableSponsorBlockNotifications'
       ]);
+      elmPage.appendChild(createSkipStatsSection());
       const elmLink = document.createElement('small');
       elmLink.className = 'ytaf-ui-sponsor';
       elmLink.textContent = 'https://sponsor.ajay.app';
