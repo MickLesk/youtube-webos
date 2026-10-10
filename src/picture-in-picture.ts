@@ -9,6 +9,7 @@ import { t } from './i18n';
 import { dispatchCommand, getService } from './innertube';
 import { getPlayerManager, PlayerMode } from './player_api';
 import { setColorActionHandler, showNotification } from './ui';
+import { onPageChange } from './page-state';
 
 type Json = Record<string, unknown>;
 
@@ -164,12 +165,9 @@ setColorActionHandler('pip', () => {
 });
 
 // Opening a video while the small window runs brings back the normal player.
-let wasWatchPage = document.body.classList.contains('WEB_PAGE_TYPE_WATCH');
-new MutationObserver(() => {
-  const isWatchPage = document.body.classList.contains('WEB_PAGE_TYPE_WATCH');
-  if (pipActive && isWatchPage && !wasWatchPage) {
+onPageChange((page) => {
+  if (pipActive && page === 'WATCH') {
     pipActive = false;
     setPipStyles(false);
   }
-  wasWatchPage = isWatchPage;
-}).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+});

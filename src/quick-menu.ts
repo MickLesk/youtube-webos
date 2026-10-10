@@ -8,6 +8,7 @@ import { t } from './i18n';
 import { getPlayerManager, PlayerMode } from './player_api';
 import { getQueueLength } from './video-queue';
 import { runColorAction, setColorActionHandler } from './ui';
+import { isWatchPage, onPageChange } from './page-state';
 
 const AUTO_CLOSE_MS = 8000;
 
@@ -215,10 +216,7 @@ setColorActionHandler('quickMenu', () => {
     close();
     return true;
   }
-  if (
-    !document.body.classList.contains('WEB_PAGE_TYPE_WATCH') ||
-    playerManager.playerMode !== PlayerMode.NORMAL
-  ) {
+  if (!isWatchPage() || playerManager.playerMode !== PlayerMode.NORMAL) {
     return false;
   }
   open();
@@ -226,8 +224,6 @@ setColorActionHandler('quickMenu', () => {
 });
 
 // Leaving the watch page closes the menu.
-new MutationObserver(() => {
-  if (visible && !document.body.classList.contains('WEB_PAGE_TYPE_WATCH')) {
-    close();
-  }
-}).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+onPageChange(() => {
+  if (visible && !isWatchPage()) close();
+});

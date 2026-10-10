@@ -4,6 +4,7 @@
  * (Diagnostics page and log) instead of features silently doing nothing.
  */
 import { t } from './i18n';
+import { getParseStats } from './hooks/json-parse';
 import { getService } from './innertube';
 import { createLogger } from './logger';
 import { addDiagnosticsLines } from './options-panel';
@@ -95,4 +96,21 @@ setTimeout(runChecks, CHECK_DELAY_MS);
 // The player may only appear with the first video; check again later.
 setTimeout(runChecks, CHECK_DELAY_MS * 6);
 
-addDiagnosticsLines(() => results.map(describeSelfTest));
+addDiagnosticsLines(() => {
+  const stats = getParseStats();
+  const lines = results.map(describeSelfTest);
+  if (stats.responses) {
+    lines.push(
+      t(
+        'selftest.timing',
+        'Processing: {count} responses, average {avg} ms, slowest {max} ms',
+        {
+          count: stats.responses,
+          avg: (stats.totalMs / stats.responses).toFixed(1),
+          max: stats.maxMs.toFixed(1)
+        }
+      )
+    );
+  }
+  return lines;
+});

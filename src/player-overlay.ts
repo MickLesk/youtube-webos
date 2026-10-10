@@ -2,6 +2,7 @@
  * A small info box in the top-left corner of the watch page that is only
  * visible while the player controls are shown. Features add lines to it.
  */
+import { isWatchPage, onPageChange } from './page-state';
 import { requireElement } from './player_api/helpers';
 
 const PLAYER_SELECTOR = 'ytlr-watch-default';
@@ -13,10 +14,6 @@ document.body.appendChild(box);
 
 let controlsVisible = false;
 const visibilityListeners: ((visible: boolean) => void)[] = [];
-
-function isWatchPage() {
-  return document.body.classList.contains('WEB_PAGE_TYPE_WATCH');
-}
 
 export function isOverlayVisible() {
   return controlsVisible && isWatchPage();
@@ -49,10 +46,7 @@ export function onOverlayVisibility(listener: (visible: boolean) => void) {
   visibilityListeners.push(listener);
 }
 
-new MutationObserver(update).observe(document.body, {
-  attributes: true,
-  attributeFilter: ['class']
-});
+onPageChange(update);
 
 // The watch page marks the player focusable while controls are hidden.
 void requireElement(PLAYER_SELECTOR, HTMLElement).then((player) => {

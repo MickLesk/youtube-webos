@@ -8,7 +8,7 @@
  * mods/ui/ytUI.js)
  */
 import { configRead, configWrite } from './config';
-import { addParseHandler } from './hooks/json-parse';
+import { addWalkPass } from './hooks/response-walker';
 import { t } from './i18n';
 import {
   customActionEndpoint,
@@ -334,32 +334,9 @@ function extendTile(node: Json) {
     info.holderKey === 'onLongPress' ? { innertubeCommand: menu } : menu;
 }
 
-function walk(node: unknown, depth = 0) {
-  if (depth > 64 || typeof node !== 'object' || node === null) return;
-
-  if (Array.isArray(node)) {
-    for (const child of node) walk(child, depth + 1);
-    return;
-  }
-
-  if ('tileRenderer' in node || 'lockupViewModel' in node) {
-    extendTile(node as Json);
-  }
-
-  for (const key in node) walk((node as Json)[key], depth + 1);
-}
-
-addParseHandler('long-press-menu', (res) => {
-  if (!configRead('enhancedLongPress')) return;
-  if (!(
-    'contents' in res ||
-    'continuationContents' in res ||
-    'onResponseReceivedActions' in res
-  )) {
-    return;
-  }
-  walk(res);
-});
+addWalkPass('long-press-menu', () =>
+  configRead('enhancedLongPress') ? { tile: extendTile } : null
+);
 
 /* ------------------------------- Feedback ------------------------------ */
 

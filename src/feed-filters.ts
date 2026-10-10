@@ -4,6 +4,7 @@
  */
 import { configRead } from './config';
 import { addParseHandler } from './hooks/json-parse';
+import { addWalkPass } from './hooks/response-walker';
 import { getPlayerManager, PlayerMode } from './player_api';
 import { setCurrentChannelProvider } from './ui';
 
@@ -415,39 +416,7 @@ function removePreview(item: Json) {
   }
 }
 
-function walk(node: unknown, filters: Filters, dearrow: boolean, depth = 0) {
-  if (depth > 64 || typeof node !== 'object' || node === null) return;
-
-  if (Array.isArray(node)) {
-    for (let i = node.length - 1; i >= 0; i--) {
-      if (shouldRemove(node[i], filters)) node.splice(i, 1);
-    }
-    for (const child of node) walk(child, filters, dearrow, depth + 1);
-    return;
-  }
-
-  if ('tileRenderer' in node || 'lockupViewModel' in node) {
-    if (dearrow) deArrow(node as Json);
-    if (filters.noPreviews) removePreview(node as Json);
-  }
-
-  for (const key in node) {
-    walk((node as Json)[key], filters, dearrow, depth + 1);
-  }
-}
-
-function looksLikeFeed(res: Json) {
-  return (
-    'contents' in res ||
-    'continuationContents' in res ||
-    'onResponseReceivedActions' in res ||
-    'entries' in res
-  );
-}
-
-addParseHandler('feed-filters', (res) => {
-  if (!looksLikeFeed(res)) return;
-
+addWalkPass('feed-filters', () => {
   const lowerList = (key: string) =>
     (configRead(key) as string[]).map((s) => s.toLowerCase());
 
@@ -484,9 +453,15 @@ addParseHandler('feed-filters', (res) => {
     filters.live ||
     filters.upcoming ||
     filters.members;
-  if (!anyFilter && !dearrow) return;
+  if (!anyFilter && !dearrow) return null;
 
-  walk(res, filters, dearrow);
+  return {
+    remove: (item) => shouldRemove(item, filters),
+    tile: (node) => {
+      if (dearrow) deArrow(node);
+      if (filters.noPreviews) removePreview(node);
+    }
+  };
 });
 
 /** Remove the suggested videos below the player on the watch page. */

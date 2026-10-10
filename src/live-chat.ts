@@ -7,6 +7,7 @@ import { configAddChangeListener, configRead } from './config';
 import { t } from './i18n';
 import { getPlayerManager, PlayerMode } from './player_api';
 import { setColorActionHandler, showNotification } from './ui';
+import { isWatchPage, onPageChange } from './page-state';
 
 type Json = Record<string, unknown>;
 
@@ -53,15 +54,12 @@ function render() {
     configRead('enableLiveChat') &&
     hasSession &&
     !chatHidden &&
-    document.body.classList.contains('WEB_PAGE_TYPE_WATCH') &&
+    isWatchPage() &&
     playerManager.playerMode === PlayerMode.NORMAL;
   panel.style.display = visible ? 'block' : 'none';
 }
 
-new MutationObserver(render).observe(document.body, {
-  attributes: true,
-  attributeFilter: ['class']
-});
+onPageChange(render);
 
 interface ChatMessage {
   author: string;
