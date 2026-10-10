@@ -8,6 +8,7 @@ import { getParseStats } from './hooks/json-parse';
 import { getService } from './innertube';
 import { createLogger } from './logger';
 import { addDiagnosticsLines } from './options-panel';
+import { getStartupFailures } from './startup-errors';
 
 export interface SelfTestResult {
   /** English name, also used as translation id `selftest.<name>`. */
@@ -98,7 +99,10 @@ setTimeout(runChecks, CHECK_DELAY_MS * 6);
 
 addDiagnosticsLines(() => {
   const stats = getParseStats();
-  const lines = results.map(describeSelfTest);
+  const lines = getStartupFailures().map(
+    (failure) => `${t('selftest.startFailed', 'Failed to start')}: ${failure}`
+  );
+  for (const result of results) lines.push(describeSelfTest(result));
   if (stats.responses) {
     lines.push(
       t(

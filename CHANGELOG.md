@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.2] - 2026/10/10
+
+### Changed
+
+- Every feature starts on its own: one that fails no longer takes the settings panel and the color buttons with it
+- Startup errors are shown on screen and on the Diagnostics page
+
 ## [0.9.1] - 2026/10/10
 
 ### Fixed

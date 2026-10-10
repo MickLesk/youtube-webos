@@ -361,6 +361,7 @@ const de: Record<string, string> = {
   'selftest.API client': 'API-Client',
   'selftest.Player service': 'Player-Dienst',
   'selftest.Video player': 'Videoplayer',
+  'selftest.startFailed': 'Start fehlgeschlagen',
   'selftest.pending': 'noch nicht geprüft',
   'selftest.missing': 'nicht gefunden',
   'selftest.affects.Command hook':
