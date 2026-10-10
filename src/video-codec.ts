@@ -1,147 +1,123 @@
+/**
+ * Video codec preference and resolution cap.
+ *
+ * Both work on the player response: video formats that don't match are
+ * removed before YouTube picks one. For the codec preference the other
+ * codecs are also reported as unsupported, so the player doesn't fall back
+ * to them on its own.
+ */
 import { configRead } from './config';
 import { addParseHandler } from './hooks/json-parse';
-import { getPlayerManager, PlayerMode } from './player_api';
-import type { EventMapOf, PlayerManager, VideoQualityData } from './player_api';
 
-const VP09_CODEC = 'vp09';
-const AV1_CODEC = 'av01';
-const VP9_FORMAT_IDS = new Set([
-  '278',
-  '242',
-  '243',
-  '244',
-  '247',
-  '248',
-  '271',
-  '302',
-  '303',
-  '308',
-  '313',
-  '315',
-  '330',
-  '331',
-  '332',
-  '333',
-  '334',
-  '335',
-  '336',
-  '337'
-]);
+type Codec = 'vp9' | 'avc' | 'av1';
+
+const CODEC_PATTERNS: Record<Codec, RegExp> = {
+  vp9: /vp0?9/,
+  avc: /avc1/,
+  av1: /av01/
+};
 
 interface StreamingFormat {
   mimeType?: string;
+  height?: number;
   [key: string]: unknown;
 }
 
-interface StreamingData {
-  formats?: StreamingFormat[];
-  adaptiveFormats?: StreamingFormat[];
-  [key: string]: unknown;
+function preferredCodec(): Codec | null {
+  const value = configRead('videoCodec');
+  return value === 'vp9' || value === 'avc' || value === 'av1' ? value : null;
 }
 
-interface PlayerResponse {
-  streamingData?: StreamingData;
-  [key: string]: unknown;
+function maxHeight(): number | null {
+  const value = Number(configRead('maxResolution'));
+  return value > 0 ? value : null;
 }
 
-function shouldForce() {
-  return configRead('forceVp9Codec');
+function codecOf(mimeType: string | undefined): Codec | null {
+  if (!mimeType) return null;
+  for (const codec of Object.keys(CODEC_PATTERNS) as Codec[]) {
+    if (CODEC_PATTERNS[codec].test(mimeType)) return codec;
+  }
+  return null;
 }
 
-function isAv1MimeType(mimeType: string | undefined) {
-  return mimeType?.includes(AV1_CODEC) ?? false;
-}
-
-function isVp09MimeType(mimeType: string | undefined) {
-  return mimeType?.includes(VP09_CODEC) ?? false;
-}
-
-export function isVp9FormatId(formatId: string | undefined) {
-  return formatId !== undefined && VP9_FORMAT_IDS.has(formatId);
-}
-
-export function getPreferredVp9FormatId(
-  qualityData: VideoQualityData[] | undefined
-) {
-  return qualityData?.find((format) => {
-    return format.isPlayable && isVp9FormatId(format.formatId);
-  })?.formatId;
-}
-
-function isVideoFormat(format: StreamingFormat) {
-  return format.mimeType?.startsWith('video/') ?? false;
-}
-
-function isVp09Format(format: StreamingFormat) {
-  return isVp09MimeType(format.mimeType);
-}
-
-function filterFormats(formats: StreamingFormat[] | undefined) {
-  if (!Array.isArray(formats)) return 0;
-
-  const hasVp09Video = formats.some(
-    (format) => isVideoFormat(format) && isVp09Format(format)
+function isVideo(format: unknown): format is StreamingFormat {
+  return (
+    typeof format === 'object' &&
+    format !== null &&
+    typeof (format as StreamingFormat).mimeType === 'string' &&
+    (format as StreamingFormat).mimeType!.startsWith('video/')
   );
-  if (!hasVp09Video) return 0;
-
-  const originalLength = formats.length;
-  formats.splice(
-    0,
-    formats.length,
-    ...formats.filter(
-      (format) => !isVideoFormat(format) || isVp09Format(format)
-    )
-  );
-
-  return originalLength - formats.length;
 }
 
-function forceVp09(playerResponse: unknown) {
-  if (!shouldForce()) return;
+/**
+ * Keep only the video formats matching `keep`, unless that would leave no
+ * video format at all.
+ */
+function filterVideo(
+  formats: unknown[],
+  keep: (format: StreamingFormat) => boolean
+): unknown[] {
+  const videos = formats.filter(isVideo);
+  if (!videos.some(keep)) return formats;
+  return formats.filter((f) => !isVideo(f) || keep(f));
+}
 
-  // JSON.parse may return primitives or `null`.
-  if (typeof playerResponse !== 'object' || playerResponse === null) return;
+addParseHandler('video-codec', (res) => {
+  const codec = preferredCodec();
+  const height = maxHeight();
+  if (!codec && !height) return;
 
-  const streamingData = (playerResponse as PlayerResponse).streamingData;
+  const streamingData = res.streamingData as
+    | Record<string, unknown>
+    | null
+    | undefined;
   if (typeof streamingData !== 'object' || streamingData === null) return;
-  if (
-    !Array.isArray(streamingData.formats) &&
-    !Array.isArray(streamingData.adaptiveFormats)
-  ) {
-    return;
-  }
 
-  const removedFormats = filterFormats(streamingData.formats);
-  const removedAdaptiveFormats = filterFormats(streamingData.adaptiveFormats);
-  const removedTotal = removedFormats + removedAdaptiveFormats;
+  for (const key of ['formats', 'adaptiveFormats']) {
+    let formats = streamingData[key];
+    if (!Array.isArray(formats)) continue;
 
-  if (removedTotal > 0) {
-    console.info(
-      `[video-codec] Filtered ${removedTotal} non-VP09 video formats`
-    );
+    const before = formats.length;
+    if (codec) {
+      formats = filterVideo(
+        formats as unknown[],
+        (f) => codecOf(f.mimeType) === codec
+      );
+    }
+    if (height) {
+      formats = filterVideo(
+        formats as unknown[],
+        (f) => typeof f.height !== 'number' || f.height <= height
+      );
+    }
+    streamingData[key] = formats;
+
+    const removed = before - (formats as unknown[]).length;
+    if (removed > 0) {
+      console.info(`[video-codec] Removed ${removed} formats from ${key}`);
+    }
   }
+});
+
+/** `true` if the codec preference rules this video MIME type out. */
+function isExcluded(mimeType: string | undefined) {
+  const codec = preferredCodec();
+  if (!codec || !mimeType?.startsWith('video/')) return false;
+  const actual = codecOf(mimeType);
+  return actual !== null && actual !== codec;
 }
-
-addParseHandler('video-codec', forceVp09);
 
 const originalCanPlayType = HTMLMediaElement.prototype.canPlayType;
 HTMLMediaElement.prototype.canPlayType = function (mimeType) {
-  if (shouldForce()) {
-    if (isAv1MimeType(mimeType)) return '';
-    if (isVp09MimeType(mimeType)) return 'probably';
-  }
-
+  if (isExcluded(mimeType)) return '';
   return originalCanPlayType.call(this, mimeType);
 };
 
 const originalIsTypeSupported = window.MediaSource?.isTypeSupported;
 if (originalIsTypeSupported) {
   window.MediaSource.isTypeSupported = function (mimeType) {
-    if (shouldForce()) {
-      if (isAv1MimeType(mimeType)) return false;
-      if (isVp09MimeType(mimeType)) return true;
-    }
-
+    if (isExcluded(mimeType)) return false;
     return originalIsTypeSupported.call(this, mimeType);
   };
 }
@@ -149,52 +125,14 @@ if (originalIsTypeSupported) {
 const originalDecodingInfo = navigator.mediaCapabilities?.decodingInfo;
 if (originalDecodingInfo) {
   navigator.mediaCapabilities.decodingInfo = function (configuration) {
-    const mimeType = configuration.video?.contentType;
-    if (shouldForce() && isAv1MimeType(mimeType)) {
+    if (isExcluded(configuration.video?.contentType)) {
       return Promise.resolve({
         supported: false,
         smooth: false,
         powerEfficient: false,
         keySystemAccess: null
-      });
+      } as MediaCapabilitiesDecodingInfo);
     }
-
     return originalDecodingInfo.call(this, configuration);
   };
 }
-
-type EventMap = EventMapOf<PlayerManager>;
-
-function setVp09PlaybackFormat(this: PlayerManager, _: unknown) {
-  if (this.playerMode === PlayerMode.PREVIEW) return;
-
-  // video-quality.ts already passes the VP9 format when forcing max quality.
-  if (configRead('forceHighResVideo')) {
-    this.removeEventListener('playbackStart', setVp09PlaybackFormat);
-    return;
-  }
-
-  this.removeEventListener('playbackStart', setVp09PlaybackFormat);
-
-  const formatId = getPreferredVp9FormatId(
-    this.player.getAvailableQualityData()
-  );
-  if (!formatId) {
-    console.warn('[video-codec] No playable VP09 formatId available');
-    return;
-  }
-
-  console.info(`[video-codec] Selecting VP09 formatId ${formatId}`);
-  this.player.setPlaybackQualityRange('highres', 'highres', formatId);
-}
-
-function handleNewVideo(this: PlayerManager, _: EventMap['newVideo']) {
-  if (!shouldForce()) return;
-
-  this.removeEventListener('playbackStart', setVp09PlaybackFormat);
-  this.addEventListener('playbackStart', setVp09PlaybackFormat);
-}
-
-void getPlayerManager().then((playerManager) => {
-  playerManager.addEventListener('newVideo', handleNewVideo);
-});

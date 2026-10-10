@@ -125,14 +125,52 @@ function isHistoryPage() {
   return location.hash.includes('FEhistory');
 }
 
+/** Sign-in reminders and Premium upsells mixed into feeds. */
+const NAG_RENDERERS = [
+  'feedNudgeRenderer',
+  'alertWithActionsRenderer',
+  'mealbarPromoRenderer',
+  'statementBannerRenderer',
+  'brandVideoSingletonRenderer'
+];
+
+const LIVE_PATTERN = /"(?:style|badgeStyle)":"[A-Z_]*LIVE[A-Z_]*"/;
+const UPCOMING_PATTERN = /"(?:style|badgeStyle)":"[A-Z_]*UPCOMING[A-Z_]*"/;
+const MEMBERS_PATTERN = /MEMBERS_ONLY/;
+
+/** JSON of the thumbnail area of a tile, where LIVE/UPCOMING badges sit. */
+function badgeJson(item: Json): string {
+  const area =
+    get(item, 'tileRenderer', 'header') ??
+    get(item, 'lockupViewModel', 'contentImage');
+  try {
+    return area ? JSON.stringify(area) : '';
+  } catch {
+    return '';
+  }
+}
+
+function itemJson(item: Json): string {
+  try {
+    return JSON.stringify(item);
+  } catch {
+    return '';
+  }
+}
+
 interface Filters {
   shorts: boolean;
   watched: boolean;
   channels: string[];
+  nags: boolean;
+  live: boolean;
+  upcoming: boolean;
+  members: boolean;
 }
 
 function shouldRemove(item: unknown, filters: Filters): boolean {
   if (!isObject(item)) return false;
+  if (filters.nags && NAG_RENDERERS.some((key) => key in item)) return true;
   if (!('tileRenderer' in item) && !('lockupViewModel' in item)) {
     return filters.shorts && 'shelfRenderer' in item && isShorts(item);
   }
@@ -143,6 +181,12 @@ function shouldRemove(item: unknown, filters: Filters): boolean {
     const channel = channelOf(item);
     if (channel && filters.channels.includes(channel)) return true;
   }
+  if (filters.live || filters.upcoming) {
+    const badges = badgeJson(item);
+    if (filters.live && LIVE_PATTERN.test(badges)) return true;
+    if (filters.upcoming && UPCOMING_PATTERN.test(badges)) return true;
+  }
+  if (filters.members && MEMBERS_PATTERN.test(itemJson(item))) return true;
   return false;
 }
 
@@ -318,17 +362,23 @@ addParseHandler('feed-filters', (res) => {
   const filters: Filters = {
     shorts: configRead('removeShorts'),
     watched: configRead('hideWatchedVideos') && !isHistoryPage(),
-    channels: configRead('blockedChannels')
+    channels: configRead('blockedChannels'),
+    nags: configRead('hideNags'),
+    live: configRead('hideLiveStreams'),
+    upcoming: configRead('hideUpcoming'),
+    members: configRead('hideMembersOnly')
   };
   const dearrow = configRead('enableDeArrow');
 
-  if (
-    !filters.shorts &&
-    !filters.watched &&
-    !filters.channels.length &&
-    !dearrow
-  )
-    return;
+  const anyFilter =
+    filters.shorts ||
+    filters.watched ||
+    filters.channels.length > 0 ||
+    filters.nags ||
+    filters.live ||
+    filters.upcoming ||
+    filters.members;
+  if (!anyFilter && !dearrow) return;
 
   walk(res, filters, dearrow);
 });

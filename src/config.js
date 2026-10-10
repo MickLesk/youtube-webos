@@ -26,6 +26,9 @@ const configOptions = new Map([
   ['enableAdBlock', { default: true, desc: 'Enable ad blocking' }],
   ['upgradeThumbnails', { default: false, desc: 'Upgrade thumbnail quality' }],
   ['removeShorts', { default: false, desc: 'Remove Shorts everywhere' }],
+  ['hideLiveStreams', { default: false, desc: 'Hide live streams' }],
+  ['hideUpcoming', { default: false, desc: 'Hide upcoming premieres' }],
+  ['hideMembersOnly', { default: false, desc: 'Hide members-only videos' }],
   [
     'hideWatchedVideos',
     { default: false, desc: 'Hide watched videos in feeds' }
@@ -147,6 +150,20 @@ const configOptions = new Map([
     { default: false, desc: 'Show remaining time and end time' }
   ],
   [
+    'startPage',
+    {
+      default: 'home',
+      desc: 'Start page',
+      choices: [
+        { value: 'home', label: 'Home' },
+        { value: 'subscriptions', label: 'Subscriptions' },
+        { value: 'library', label: 'Library' },
+        { value: 'history', label: 'History' }
+      ]
+    }
+  ],
+  ['hideNags', { default: true, desc: 'Hide sign-in and Premium nags' }],
+  [
     'hideYouThere',
     { default: true, desc: 'Never ask "Are you still watching?"' }
   ],
@@ -172,8 +189,32 @@ const configOptions = new Map([
     { default: false, desc: 'Force max resolution video playback' }
   ],
   [
-    'forceVp9Codec',
-    { default: false, desc: 'Prefer VP9 over AV1 video codec' }
+    'videoCodec',
+    {
+      default: 'auto',
+      desc: 'Video codec',
+      choices: [
+        { value: 'auto', label: 'Auto' },
+        { value: 'vp9', label: 'VP9' },
+        { value: 'avc', label: 'AVC (H.264)' },
+        { value: 'av1', label: 'AV1' }
+      ]
+    }
+  ],
+  [
+    'maxResolution',
+    {
+      default: 0,
+      desc: 'Maximum resolution',
+      choices: [
+        { value: 0, label: 'No limit' },
+        { value: 2160, label: '4K' },
+        { value: 1440, label: '1440p' },
+        { value: 1080, label: '1080p' },
+        { value: 720, label: '720p' },
+        { value: 480, label: '480p' }
+      ]
+    }
   ],
   [
     'removeEndscreen',
@@ -203,13 +244,22 @@ const optionHelp = {
     'Pauses playback after the chosen time. Starts when chosen and is not kept after restarting the app.',
   showTimeRemaining:
     'Shows how much time is left and when the video ends, including the playback speed, while the controls are visible.',
+  startPage:
+    'The page opened when the app starts. Launching into a video is not affected.',
+  hideNags:
+    'Removes sign-in reminders, guest banners and YouTube Premium promotions from feeds and the player.',
+  hideLiveStreams: 'Hides running live streams from feeds and search.',
+  hideUpcoming: 'Hides upcoming premieres and scheduled streams.',
+  hideMembersOnly: 'Hides videos only available to channel members.',
   hideYouThere: 'Playback no longer pauses to ask whether you are still there.',
   mutePreviews: 'Previews that play when a tile is focused start muted.',
   defaultPlaybackSpeed:
     'Applied to every video. While watching, [RED] steps through the speeds and remembers the choice.',
   forceHighResVideo: 'Selects the highest available resolution on start.',
-  forceVp9Codec:
-    'Helps TVs that stall on AV1 streams. VP9 is reported as supported, so only enable it if your TV can decode VP9.',
+  videoCodec:
+    'Plays only the chosen codec when the video offers it. VP9 or AVC help TVs that stall on AV1 streams. AVC is limited to 1080p.',
+  maxResolution:
+    'Never plays above this resolution. Saves bandwidth and helps slower TVs.',
   forceOriginalAudio:
     'Drops auto-dubbed audio tracks so videos play in their original language.',
   disableAutoCaptions:
@@ -279,7 +329,17 @@ function loadStoredConfig() {
   }
 
   try {
-    return JSON.parse(storage);
+    const stored = JSON.parse(storage);
+
+    // 'forceVp9Codec' (boolean) became the 'videoCodec' choice.
+    if (stored && 'forceVp9Codec' in stored) {
+      if (stored.forceVp9Codec === true && stored.videoCodec === undefined) {
+        stored.videoCodec = 'vp9';
+      }
+      delete stored.forceVp9Codec;
+    }
+
+    return stored;
   } catch (err) {
     console.warn('Error parsing stored config:', err);
     return null;

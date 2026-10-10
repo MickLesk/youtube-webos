@@ -32,7 +32,7 @@
 - Remove end screens
 - Bypass account selector screen
 - Live stream catch-up (skip to live edge)
-- Prefer VP9 over AV1 codec
+- Video codec choice (VP9 / AVC / AV1) and maximum resolution
 - Mute video previews
 - Default playback speed (🟥 Red button cycles speeds while watching)
 - SponsorBlock modes per category (Skip / Ask / Show only / Off), jump to highlight (🟨 Yellow button)
@@ -41,6 +41,10 @@
 - [Return YouTube Dislike](https://returnyoutubedislike.com/) and [DeArrow](https://dearrow.ajay.app/)
 - Prefer original audio over dubbed tracks, no automatic subtitles
 - OLED black theme, option to disable animations, permanent clock
+- Sleep timer, remaining time and end time
+- Hide live streams, premieres, members-only videos and sign-in/Premium nags
+- Choose the start page (Home, Subscriptions, Library, History)
+- On-screen diagnostics log and settings reset
 - Version offset that stops the LG Content Store from replacing the app
 
 > [!NOTE]

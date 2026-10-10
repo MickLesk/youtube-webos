@@ -368,7 +368,9 @@ function createOptionsPanel() {
     createSection('General', [
       'enableAdBlock',
       'autoAccountSelect',
+      'startPage',
       'hideYouThere',
+      'hideNags',
       'mutePreviews'
     ])
   );
@@ -379,7 +381,8 @@ function createOptionsPanel() {
       'sleepTimer',
       'showTimeRemaining',
       'forceHighResVideo',
-      'forceVp9Codec',
+      'videoCodec',
+      'maxResolution',
       'forceOriginalAudio',
       'disableAutoCaptions',
       'removeEndscreen',
@@ -392,6 +395,9 @@ function createOptionsPanel() {
     createSection('Feeds', [
       'removeShorts',
       'hideWatchedVideos',
+      'hideLiveStreams',
+      'hideUpcoming',
+      'hideMembersOnly',
       'upgradeThumbnails',
       'enableDeArrow',
       'enableDeArrowThumbnails'

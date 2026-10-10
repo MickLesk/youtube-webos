@@ -37,4 +37,5 @@ import './playback-speed';
 import './return-dislike';
 import './time-remaining';
 import './sleep-timer';
+import './start-page';
 import './appearance';

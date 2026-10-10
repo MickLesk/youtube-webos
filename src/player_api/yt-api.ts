@@ -11,7 +11,7 @@ interface YTPlayerEventMap extends HTMLElementEventMap {
   onStateChange: PlayerState;
 }
 
-export interface VideoQualityData {
+interface VideoQualityData {
   formatId: string | undefined;
   qualityLabel: string;
   quality: string;

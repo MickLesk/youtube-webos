@@ -24,6 +24,16 @@ function removeYouThere(res: Json) {
   );
 }
 
+/** Drop Premium upsell banners attached to player responses. */
+function removeNags(res: Json) {
+  const messages = asArray(res.messages);
+  if (!messages || !configRead('hideNags')) return;
+
+  res.messages = messages.filter(
+    (msg) => !(isObject(msg) && 'mealbarPromoRenderer' in msg)
+  );
+}
+
 /** Keep only the original audio track when dubbed tracks are offered. */
 function forceOriginalAudio(res: Json) {
   if (!configRead('forceOriginalAudio')) return;
@@ -94,6 +104,7 @@ function removePromotions(res: Json) {
 
 addParseHandler('player-response', (res) => {
   removeYouThere(res);
+  removeNags(res);
   forceOriginalAudio(res);
   disableAutoCaptions(res);
   removePromotions(res);
