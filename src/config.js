@@ -657,6 +657,18 @@ export function configGetHelp(key) {
   return configOptions.get(key)?.help ?? null;
 }
 
+/**
+ * Returns the default value of an option.
+ * @param {string} key
+ */
+export function configGetDefault(key) {
+  if (!configExists(key)) {
+    throw new Error('tried to get default for unknown config key: ' + key);
+  }
+
+  return configOptions.get(key).default;
+}
+
 /** Remove all stored settings. Takes full effect after a reload. */
 export function configResetAll() {
   window.localStorage.removeItem(storageKey);

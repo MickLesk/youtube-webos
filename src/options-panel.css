@@ -1,0 +1,412 @@
+/*
+ * Settings panel: header on top, sidebar on the left, options in the middle,
+ * help column on the right. Sizes follow the screen height (vh on the panel,
+ * em inside), so it looks the same on 720p and 4K and does not depend on the
+ * font size YouTube uses.
+ *
+ * Plain absolute positioning instead of flexbox: webOS 3 (Chrome 38) only
+ * has an old flexbox implementation.
+ */
+.ytaf-ui-container {
+  position: fixed;
+  top: 4vh;
+  left: 3vw;
+  right: 3vw;
+  bottom: 4vh;
+  z-index: 1000;
+  overflow: hidden;
+
+  font-family: 'YouTube Sans', Roboto, Arial, sans-serif;
+  font-size: 2.4vh;
+  line-height: 1.3;
+  color: #f1f1f1;
+  background: rgba(15, 15, 15, 0.97);
+  border: 1px solid #303030;
+  border-radius: 1em;
+  box-shadow: 0 1em 3em rgba(0, 0, 0, 0.6);
+}
+
+.ytaf-ui-container *,
+.ytaf-ui-container *::before,
+.ytaf-ui-container *::after {
+  box-sizing: border-box;
+}
+
+.ytaf-ui-container:focus,
+.ytaf-ui-container button:focus,
+.ytaf-ui-container input:focus {
+  outline: none;
+}
+
+.ytaf-ui-container button,
+.ytaf-ui-container input {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+/* ------------------------------- Header ------------------------------- */
+
+.ytaf-ui-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.6em;
+  padding: 0 1.4em;
+  border-bottom: 1px solid #272727;
+  line-height: 3.6em;
+  white-space: nowrap;
+}
+
+.ytaf-ui-logo {
+  display: inline-block;
+  width: 1.6em;
+  height: 1.15em;
+  margin-right: 0.6em;
+  vertical-align: middle;
+}
+
+.ytaf-ui-logo svg,
+.ytaf-ui-icon svg {
+  display: block;
+}
+
+.ytaf-ui-title {
+  font-size: 1.25em;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
+.ytaf-ui-version {
+  float: right;
+  font-size: 0.8em;
+  color: #717171;
+}
+
+/* ------------------------------- Sidebar ------------------------------ */
+
+.ytaf-ui-nav {
+  position: absolute;
+  top: 3.6em;
+  left: 0;
+  bottom: 0;
+  width: 13.5em;
+  padding: 0.8em 0.6em;
+  background: #141414;
+  border-right: 1px solid #272727;
+  overflow: hidden;
+}
+
+.ytaf-ui-container .ytaf-ui-nav-item {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: 0 0 0.25em;
+  padding: 0.55em 0.8em 0.55em 3em;
+  border: 0;
+  border-radius: 0.6em;
+  background: transparent;
+  color: #aaa;
+  text-align: left;
+  white-space: nowrap;
+  transition:
+    background-color 0.12s,
+    color 0.12s,
+    transform 0.12s;
+}
+
+.ytaf-ui-icon {
+  position: absolute;
+  left: 0.8em;
+  top: 50%;
+  width: 1.4em;
+  height: 1.4em;
+  margin-top: -0.7em;
+}
+
+.ytaf-ui-container .ytaf-ui-nav-item.ytaf-ui-nav-active {
+  color: #fff;
+  background: #272727;
+}
+
+.ytaf-ui-container .ytaf-ui-nav-item.ytaf-ui-nav-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5em;
+  bottom: 0.5em;
+  width: 0.22em;
+  border-radius: 0.11em;
+  background: #ff0033;
+}
+
+.ytaf-ui-container .ytaf-ui-nav-item:focus {
+  color: #0f0f0f;
+  background: #f1f1f1;
+  transform: scale(1.04);
+}
+
+.ytaf-ui-nav-dot {
+  position: absolute;
+  right: 0.8em;
+  top: 50%;
+  width: 0.5em;
+  height: 0.5em;
+  margin-top: -0.25em;
+  border-radius: 50%;
+  background: #ff0033;
+}
+
+/* ------------------------------- Content ------------------------------ */
+
+.ytaf-ui-body {
+  position: absolute;
+  top: 3.6em;
+  left: 13.5em;
+  right: 18em;
+  bottom: 0;
+  padding: 0.4em 1.6em 1.6em;
+  overflow-y: auto;
+}
+
+.ytaf-ui-group {
+  margin-bottom: 0.6em;
+}
+
+.ytaf-ui-container .ytaf-ui-heading {
+  margin: 1em 0 0.35em 0.8em;
+  font-size: 0.8em;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ff4e6a;
+}
+
+.ytaf-ui-container .ytaf-ui-row {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 2.6em;
+  margin: 0 0 0.15em;
+  padding: 0.6em 0.9em;
+  border: 0;
+  border-radius: 0.6em;
+  background: #1f1f1f;
+  color: #f1f1f1;
+  text-align: left;
+  transition:
+    background-color 0.12s,
+    color 0.12s,
+    transform 0.12s;
+}
+
+.ytaf-ui-container .ytaf-ui-row:focus {
+  color: #0f0f0f;
+  background: #f1f1f1;
+  transform: scale(1.015);
+}
+
+.ytaf-ui-row-label {
+  display: block;
+}
+
+.ytaf-ui-row-toggle .ytaf-ui-row-label {
+  padding-right: 3.6em;
+}
+
+.ytaf-ui-row-choice .ytaf-ui-row-label {
+  padding-right: 45%;
+}
+
+.ytaf-ui-row-preset .ytaf-ui-row-label {
+  padding-right: 11em;
+}
+
+.ytaf-ui-row-value {
+  position: absolute;
+  right: 0.9em;
+  top: 50%;
+  max-width: 43%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transform: translateY(-50%);
+  color: #aaa;
+}
+
+.ytaf-ui-row:focus .ytaf-ui-row-value {
+  color: #0f0f0f;
+}
+
+.ytaf-ui-row-action::after {
+  content: '\203a';
+  position: absolute;
+  right: 0.9em;
+  top: 50%;
+  margin-top: -0.65em;
+  color: #717171;
+}
+
+/* Choice values: ‹ value › */
+.ytaf-ui-choice-text {
+  font-weight: bold;
+  color: #f1f1f1;
+}
+
+.ytaf-ui-row:focus .ytaf-ui-choice-text {
+  color: #0f0f0f;
+}
+
+.ytaf-ui-arrow {
+  display: inline-block;
+  padding: 0 0.4em;
+  color: #555;
+}
+
+.ytaf-ui-row:focus .ytaf-ui-arrow {
+  color: #ff0033;
+  font-weight: bold;
+}
+
+/* Toggle pill */
+.ytaf-ui-toggle {
+  position: relative;
+  display: inline-block;
+  width: 2.4em;
+  height: 1.3em;
+  vertical-align: middle;
+  border-radius: 0.65em;
+  background: #4a4a4a;
+  transition: background-color 0.15s;
+}
+
+.ytaf-ui-row:focus .ytaf-ui-toggle {
+  background: #b5b5b5;
+}
+
+.ytaf-ui-knob {
+  position: absolute;
+  top: 0.15em;
+  left: 0.15em;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.15s;
+}
+
+.ytaf-ui-container .ytaf-ui-toggle.ytaf-ui-toggle-on {
+  background: #ff0033;
+}
+
+.ytaf-ui-toggle-on .ytaf-ui-knob {
+  left: 1.25em;
+}
+
+/* Presets ask for a second OK. */
+.ytaf-ui-container .ytaf-ui-row-armed .ytaf-ui-row-value {
+  color: #ff0033;
+  font-weight: bold;
+}
+
+.ytaf-ui-badge {
+  display: inline-block;
+  margin-left: 0.6em;
+  padding: 0.05em 0.45em;
+  border-radius: 0.3em;
+  background: #ff0033;
+  color: #fff;
+  font-size: 0.7em;
+  font-weight: bold;
+  vertical-align: 0.15em;
+  text-transform: uppercase;
+}
+
+.ytaf-ui-empty {
+  margin: 0.3em 0.9em 0.5em;
+  font-size: 0.85em;
+  color: #888;
+}
+
+.ytaf-ui-sponsor {
+  margin-top: 0.8em;
+}
+
+.ytaf-ui-container .ytaf-ui-text {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.15em;
+  padding: 0.55em 0.9em;
+  border: 0.12em solid #3a3a3a;
+  border-radius: 0.6em;
+  background: #0f0f0f;
+  color: #f1f1f1;
+}
+
+.ytaf-ui-container .ytaf-ui-text:focus {
+  border-color: #f1f1f1;
+}
+
+.ytaf-ui-log {
+  margin: 0.2em 0 0.6em;
+  padding: 0.6em 0.9em;
+  border-radius: 0.6em;
+  background: #161616;
+  font-family: monospace;
+  font-size: 0.75em;
+  color: #aaa;
+}
+
+.ytaf-ui-log-error {
+  color: #ff8080;
+}
+
+.ytaf-ui-log-warn {
+  color: #ffd080;
+}
+
+/* ----------------------------- Help column ---------------------------- */
+
+.ytaf-ui-side {
+  position: absolute;
+  top: 3.6em;
+  right: 0;
+  bottom: 0;
+  width: 18em;
+  padding: 1.4em 1.4em 1em;
+  border-left: 1px solid #272727;
+  background: #141414;
+}
+
+.ytaf-ui-help-title {
+  margin-bottom: 0.5em;
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+.ytaf-ui-help {
+  color: #c8c8c8;
+  font-size: 0.9em;
+  line-height: 1.45;
+}
+
+.ytaf-ui-hint {
+  margin-top: 1em;
+  font-size: 0.8em;
+  color: #ff4e6a;
+}
+
+.ytaf-ui-keys {
+  position: absolute;
+  left: 1.75em;
+  right: 1.75em;
+  bottom: 1.25em;
+  padding-top: 0.8em;
+  border-top: 1px solid #272727;
+  font-size: 0.75em;
+  line-height: 1.5;
+  white-space: pre-line;
+  color: #888;
+}

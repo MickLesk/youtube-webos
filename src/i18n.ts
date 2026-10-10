@@ -234,6 +234,55 @@ const de: Record<string, string> = {
   'ui.clearLog': 'Protokoll leeren',
   'ui.reset': 'Alle Einstellungen zurücksetzen',
   'ui.resetConfirm': 'Zum Zurücksetzen erneut OK drücken',
+  'ui.new': 'Neu',
+  'ui.apply': 'Anwenden',
+  'ui.confirm': 'Zum Anwenden erneut OK',
+  'ui.applied': 'Angewendet',
+  'ui.preset.recommended': 'Empfohlen',
+  'ui.preset.minimal': 'Minimal',
+  'ui.preset.off': 'Alles aus',
+  'ui.presetHelp.recommended':
+    'Standardwerte plus die beliebtesten Extras: keine Shorts, stumme Vorschauen, keine Endcards, Restzeit, Dislikes und schärfere Thumbnails.',
+  'ui.presetHelp.minimal':
+    'Nur Werbeblocker, SponsorBlock und kein „Schaust du noch?“. Alles andere aus.',
+  'ui.presetHelp.off':
+    'Schaltet alle Extras ab und gibt die Farbtasten an YouTube zurück. Gesperrte Kanäle und Wörter bleiben erhalten.',
+  'ui.group.Quick setup': 'Schnelleinrichtung',
+  'ui.group.Start and account': 'Start und Konto',
+  'ui.group.Interruptions': 'Unterbrechungen',
+  'ui.group.App': 'App',
+  'ui.group.Video': 'Video',
+  'ui.group.Subtitles': 'Untertitel',
+  'ui.group.Controls': 'Bedienung',
+  'ui.group.Display': 'Anzeige',
+  'ui.group.Live': 'Live',
+  'ui.group.Filter': 'Filter',
+  'ui.group.Subscriptions': 'Abos',
+  'ui.group.Thumbnails and titles': 'Thumbnails und Titel',
+  'ui.group.Clock': 'Uhr',
+  'ui.group.Notifications': 'Hinweise',
+  'ui.group.Interface': 'Oberfläche',
+  'ui.group.Color buttons': 'Farbtasten',
+  'ui.group.SponsorBlock': 'SponsorBlock',
+  'ui.group.Categories': 'Kategorien',
+  'ui.pageHelp.General':
+    'Schnelleinrichtung, Sprache, Start und alles, womit YouTube dich unterbricht.',
+  'ui.pageHelp.Playback':
+    'Qualität, Tempo, Untertitel und Bedienung beim Schauen.',
+  'ui.pageHelp.Feeds':
+    'Was auf der Startseite, in den Abos und neben Videos erscheint.',
+  'ui.pageHelp.Blocking':
+    'Kanäle, Wörter in Titeln und ganze Regale ausblenden.',
+  'ui.pageHelp.Appearance': 'Uhr, Hinweise und das Aussehen der App.',
+  'ui.pageHelp.Buttons':
+    'Was die rote, gelbe und blaue Taste machen. Grün öffnet immer dieses Menü.',
+  'ui.pageHelp.SponsorBlock':
+    'Sponsoren, Intros und andere von der Community gemeldete Abschnitte überspringen.',
+  'ui.pageHelp.Diagnostics':
+    'Selbsttest, Update-Status, Warnungen und komplettes Zurücksetzen.',
+  'ui.hintNav': 'OK oder › öffnet den Bereich',
+  'ui.hintChoice': '‹ › ändert den Wert, OK nächster Wert',
+  'ui.hintToggle': 'OK schaltet ein oder aus',
   'ui.keyGreen': 'Einstellungen',
   'ui.settingsEntry': 'YouTube Extended',
   'ui.settingsEntrySummary':

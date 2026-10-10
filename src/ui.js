@@ -103,7 +103,7 @@ setKeyLegendProvider(() => {
       );
     }
   }
-  return parts.join('   ');
+  return parts.join('\n');
 });
 
 let colorKeyConsumed = false;
