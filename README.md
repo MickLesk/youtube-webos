@@ -58,6 +58,7 @@
 - Live chat and chat replay next to the player (experimental)
 - Quick menu while watching, per-channel speed and SponsorBlock, resume position, number key seeking
 - Emoji images for older TVs, startup self-test and update check
+- Newest subscriptions on Home, settings per YouTube account, subtitle styling and auto-translation, SponsorBlock time saved
 
 > [!NOTE]
 > Press the 🟩 **Green** button on your remote to access the configuration screen.

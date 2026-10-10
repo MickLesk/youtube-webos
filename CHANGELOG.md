@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.8.0] - 2026/10/10
+
+### Added
+
+- Row with the newest subscription videos at the top of Home (optional)
+- Separate settings for each YouTube account (optional)
+- Maximum resolution per channel, 8K as resolution choice
+- Subtitle size, background and position; automatic translation into the chosen subtitle language
+- SponsorBlock time saved counter
+- Response processing time on the Diagnostics page
+
+### Changed
+
+- Faster response processing: one shared pass for feed filters, DeArrow and the long-press menu
+- One shared page observer instead of one per feature
+- `@webos-tools/cli` from npm instead of a GitHub fork; dependency updates
+
 ## [0.7.0] - 2026/10/10
 
 ### Added
