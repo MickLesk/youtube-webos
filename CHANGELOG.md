@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.0] - 2026/10/10
+
+### Added
+
+- Presets in the settings: Recommended, Minimal and Everything off
+- Badges for new options in the settings
+- Unit tests for settings, feed filters and response handling (`pnpm test`)
+- A tag builds the IPK and publishes a GitHub release with notes from this changelog
+
+### Changed
+
+- Redesigned settings for the TV: sidebar with icons, one row per option with toggles, left/right to change values, grouped sections and a help column
+- Releases are no longer marked as prereleases, so the update check finds them
+
+### Fixed
+
+- Switching the language no longer leaves the old settings panel listening to keys
+
 ## [0.8.0] - 2026/10/10
 
 ### Added

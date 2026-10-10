@@ -45,7 +45,7 @@
 - Hide live streams, premieres, members-only videos and sign-in/Premium nags
 - Choose the start page (Home, Subscriptions, Library, History)
 - On-screen diagnostics log and settings reset
-- Settings in English and German, organized in pages
+- TV-friendly settings in English and German: sidebar, toggles, help for every option, badges for new options and presets
 - Remappable color buttons (speed, SponsorBlock, audio-only)
 - Hide videos by title keyword, shelves by title and videos below a minimum length
 - Preferred subtitle language, adjustable seek step, Magic Remote scroll wheel seeking
@@ -131,7 +131,19 @@ pnpm run build:dev
 pnpm run package
 ```
 
-The `.ipk` file will be generated in the project root directory. You can stop here if you're fine with installing the IPK via [the webOS Dev Manager app](https://github.com/webosbrew/dev-manager-desktop). Alternatively, continue below if you want to make it so you can install the IPK on your TV with one command.
+The `.ipk` file will be generated in the project root directory.
+
+### Tests
+
+```sh
+pnpm test
+```
+
+Runs the unit tests for settings, feed filters and response handling with Node's test runner.
+
+### Releases
+
+Pushing a tag like `v0.9.0` (matching the version in `package.json`) builds the IPK and publishes a GitHub release with the notes from `CHANGELOG.md`. Tags with a suffix such as `v0.9.0-beta` become prereleases, which the in-app update check ignores. You can stop here if you're fine with installing the IPK via [the webOS Dev Manager app](https://github.com/webosbrew/dev-manager-desktop). Alternatively, continue below if you want to make it so you can install the IPK on your TV with one command.
 
 ### On the TV
 
