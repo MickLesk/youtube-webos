@@ -4,6 +4,7 @@
  * the next app start.
  */
 import { configAddChangeListener, configRead, configWrite } from './config';
+import { t } from './i18n';
 import { showNotification } from './ui';
 
 const WARNING_MS = 60 * 1000;
@@ -22,17 +23,30 @@ function arm(minutes: number) {
   if (!minutes) return;
 
   const ms = minutes * 60 * 1000;
-  showNotification(`Sleep timer: pausing in ${minutes} minutes`, 3000);
+  showNotification(
+    t('msg.sleepArmed', 'Sleep timer: pausing in {minutes} minutes', {
+      minutes
+    }),
+    3000
+  );
 
   if (ms > WARNING_MS) {
     warnTimer = window.setTimeout(() => {
-      showNotification('Sleep timer: pausing in 1 minute', 5000, 'yellow');
+      showNotification(
+        t('msg.sleepWarning', 'Sleep timer: pausing in 1 minute'),
+        5000,
+        'yellow'
+      );
     }, ms - WARNING_MS);
   }
 
   fireTimer = window.setTimeout(() => {
     for (const video of document.querySelectorAll('video')) video.pause();
-    showNotification('Sleep timer: playback paused', 10000, 'yellow');
+    showNotification(
+      t('msg.sleepFired', 'Sleep timer: playback paused'),
+      10000,
+      'yellow'
+    );
     configWrite('sleepTimer', 0);
   }, ms);
 }

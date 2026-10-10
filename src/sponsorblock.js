@@ -1,6 +1,7 @@
 import sha256 from 'tiny-sha256';
 import { configRead } from './config';
-import { setColorKeyHandler, showNotification } from './ui';
+import { getButtonLabel, setColorActionHandler, showNotification } from './ui';
+import { t } from './i18n';
 import { createLogger } from './logger';
 
 const logger = createLogger('sponsorblock');
@@ -62,12 +63,20 @@ const categoryConfigKeys = {
 };
 
 /**
- * Per-category mode: 'skip' (automatic), 'manual' (offer skip on [YELLOW]),
+ * Per-category mode: 'skip' (automatic), 'manual' (offer skip on a button),
  * 'show' (only mark on the progress bar) or 'off'.
  */
 function getCategoryMode(category) {
   const key = categoryConfigKeys[category];
   return key ? configRead(key) : 'off';
+}
+
+function segmentName(category) {
+  return t(`segment.${category}`, barTypes[category]?.name || category);
+}
+
+function buttonLabel() {
+  return getButtonLabel('sponsorblock') ?? '';
 }
 
 function notify(text, time = 2000) {
@@ -156,8 +165,15 @@ class SponsorBlockHandler {
 
     this.segments = segments;
 
-    if (this.highlight) {
-      notify('Highlight available - press [YELLOW] to jump to it', 4000);
+    if (this.highlight && getButtonLabel('sponsorblock')) {
+      notify(
+        t(
+          'msg.highlightAvailable',
+          'Highlight available - press {button} to jump to it',
+          { button: buttonLabel() }
+        ),
+        4000
+      );
     }
 
     this.scheduleSkipHandler = () => this.scheduleSkip();
@@ -168,11 +184,11 @@ class SponsorBlockHandler {
   }
 
   /**
-   * Handle a press of the yellow button. Skips the current "Ask" segment or
+   * Handle a press of the SponsorBlock button. Skips the current "Ask" segment or
    * jumps to the highlight.
    * @returns {boolean} Whether the press was used.
    */
-  handleYellow() {
+  handleButton() {
     if (!this.video) return false;
     const time = this.video.currentTime;
 
@@ -183,14 +199,17 @@ class SponsorBlockHandler {
         time < seg.segment[1]
     );
     if (current) {
-      const name = barTypes[current.category]?.name || current.category;
-      notify(`Skipping ${name}`);
+      notify(
+        t('msg.skipping', 'Skipping {name}', {
+          name: segmentName(current.category)
+        })
+      );
       this.video.currentTime = current.segment[1];
       return true;
     }
 
     if (this.highlight && time < this.highlight.segment[0] - 1) {
-      notify('Jumping to highlight');
+      notify(t('msg.jumpHighlight', 'Jumping to highlight'));
       this.video.currentTime = this.highlight.segment[0];
       return true;
     }
@@ -356,7 +375,7 @@ class SponsorBlockHandler {
         }
         // Read the settings at skip time so changes apply mid-video.
         const mode = getCategoryMode(segment.category);
-        const skipName = barTypes[segment.category]?.name || segment.category;
+        const skipName = segmentName(segment.category);
 
         if (mode === 'manual') {
           const id = segment.UUID ?? `${start}-${end}`;
@@ -364,7 +383,10 @@ class SponsorBlockHandler {
             this.notifiedSegments.add(id);
             // Always shown: without it the viewer can't know to press.
             showNotification(
-              `Press [YELLOW] to skip ${skipName}`,
+              t('msg.askSkip', 'Press {button} to skip {name}', {
+                button: buttonLabel(),
+                name: skipName
+              }),
               Math.min(Math.max((end - start) * 1000, 2000), 8000),
               'yellow'
             );
@@ -383,7 +405,7 @@ class SponsorBlockHandler {
         }
 
         console.debug(this.videoID, 'Skipping', segment);
-        notify(`Skipping ${skipName}`);
+        notify(t('msg.skipping', 'Skipping {name}', { name: skipName }));
         this.video.currentTime = end;
         this.scheduleSkip();
       },
@@ -493,7 +515,7 @@ window.addEventListener(
   false
 );
 
-setColorKeyHandler('yellow', () => {
+setColorActionHandler('sponsorblock', () => {
   if (!document.body.classList.contains('WEB_PAGE_TYPE_WATCH')) return false;
-  return window.sponsorblock?.handleYellow() ?? false;
+  return window.sponsorblock?.handleButton() ?? false;
 });

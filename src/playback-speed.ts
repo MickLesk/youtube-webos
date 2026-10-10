@@ -1,11 +1,12 @@
 /**
- * Applies a default playback speed to every video and lets the red button
+ * Applies a default playback speed to every video and lets a color button
  * cycle through speeds during playback. The chosen speed is remembered.
  */
 import { configGetChoices, configRead, configWrite } from './config';
 import { getPlayerManager, PlayerMode } from './player_api';
 import type { PlayerManager } from './player_api';
-import { setColorKeyHandler, showNotification } from './ui';
+import { t } from './i18n';
+import { setColorActionHandler, showNotification } from './ui';
 
 const playerManager = await getPlayerManager();
 
@@ -54,7 +55,7 @@ function isWatching() {
   );
 }
 
-setColorKeyHandler('red', () => {
+setColorActionHandler('speed', () => {
   if (!isWatching()) return false;
 
   const speeds = (configGetChoices('defaultPlaybackSpeed') ?? []).map(
@@ -67,6 +68,10 @@ setColorKeyHandler('red', () => {
   configWrite('defaultPlaybackSpeed', next);
   setRate(next);
 
-  showNotification(`Playback speed: ${next}x`, 1500, 'red');
+  showNotification(
+    t('msg.speed', 'Playback speed: {speed}x', { speed: next }),
+    1500,
+    'red'
+  );
   return true;
 });

@@ -22,7 +22,26 @@ const PLAYBACK_SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2].map((value) => ({
  * - choice options: `{ default, desc, choices: { value, label }[] }`
  * - data options (not shown as a control): `{ default, desc }`
  */
+const BUTTON_ACTIONS = [
+  { value: 'none', label: 'YouTube default' },
+  { value: 'speed', label: 'Cycle playback speed' },
+  { value: 'sponsorblock', label: 'SponsorBlock skip/highlight' },
+  { value: 'audioOnly', label: 'Audio-only mode' }
+];
+
 const configOptions = new Map([
+  [
+    'language',
+    {
+      default: 'auto',
+      desc: 'Language',
+      choices: [
+        { value: 'auto', label: 'Automatic' },
+        { value: 'en', label: 'English' },
+        { value: 'de', label: 'Deutsch' }
+      ]
+    }
+  ],
   ['enableAdBlock', { default: true, desc: 'Enable ad blocking' }],
   ['upgradeThumbnails', { default: false, desc: 'Upgrade thumbnail quality' }],
   ['removeShorts', { default: false, desc: 'Remove Shorts everywhere' }],
@@ -36,6 +55,26 @@ const configOptions = new Map([
   [
     'blockedChannels',
     { default: [], desc: 'Channels hidden from feeds and search' }
+  ],
+  [
+    'blockedKeywords',
+    { default: [], desc: 'Hide videos whose title contains' }
+  ],
+  ['hiddenShelves', { default: [], desc: 'Hide shelves whose title contains' }],
+  [
+    'minVideoLength',
+    {
+      default: 0,
+      desc: 'Minimum video length',
+      choices: [0, 1, 2, 3, 5, 10, 20].map((value) => ({
+        value,
+        label: value ? `${value} min` : 'Off'
+      }))
+    }
+  ],
+  [
+    'hideWatchRecommendations',
+    { default: false, desc: 'Hide recommendations below the player' }
   ],
   [
     'enableDeArrow',
@@ -120,7 +159,7 @@ const configOptions = new Map([
   ],
   [
     'enableSponsorBlockHighlight',
-    { default: true, desc: 'Offer jump to highlight ([YELLOW])' }
+    { default: true, desc: 'Offer jump to highlight' }
   ],
   [
     'enableSponsorBlockNotifications',
@@ -130,7 +169,7 @@ const configOptions = new Map([
     'defaultPlaybackSpeed',
     {
       default: 1,
-      desc: 'Default playback speed ([RED] cycles)',
+      desc: 'Default playback speed',
       choices: PLAYBACK_SPEEDS
     }
   ],
@@ -178,6 +217,56 @@ const configOptions = new Map([
   ['enableReturnDislike', { default: false, desc: 'Show dislike count' }],
   ['hideLogo', { default: false, desc: 'Hide YouTube logo' }],
   ['showWatch', { default: false, desc: 'Display time in UI' }],
+  [
+    'clockFormat',
+    {
+      default: 'auto',
+      desc: 'Clock format',
+      choices: [
+        { value: 'auto', label: 'Automatic' },
+        { value: '24h', label: '24 hours' },
+        { value: '12h', label: '12 hours' }
+      ]
+    }
+  ],
+  ['clockShowDate', { default: false, desc: 'Show date next to the clock' }],
+  [
+    'notificationPosition',
+    {
+      default: 'bottom-right',
+      desc: 'Notification position',
+      choices: [
+        { value: 'bottom-right', label: 'Bottom right' },
+        { value: 'top-right', label: 'Top right' },
+        { value: 'bottom-left', label: 'Bottom left' },
+        { value: 'top-left', label: 'Top left' }
+      ]
+    }
+  ],
+  [
+    'notificationDuration',
+    {
+      default: 1,
+      desc: 'Notification duration',
+      choices: [
+        { value: 0.6, label: 'Short' },
+        { value: 1, label: 'Normal' },
+        { value: 1.6, label: 'Long' }
+      ]
+    }
+  ],
+  [
+    'redButton',
+    { default: 'speed', desc: 'Red button', choices: BUTTON_ACTIONS }
+  ],
+  [
+    'yellowButton',
+    { default: 'sponsorblock', desc: 'Yellow button', choices: BUTTON_ACTIONS }
+  ],
+  [
+    'blueButton',
+    { default: 'audioOnly', desc: 'Blue button', choices: BUTTON_ACTIONS }
+  ],
   [
     'showWatchAlways',
     { default: false, desc: 'Keep clock visible during playback' }
@@ -254,7 +343,7 @@ const optionHelp = {
   hideYouThere: 'Playback no longer pauses to ask whether you are still there.',
   mutePreviews: 'Previews that play when a tile is focused start muted.',
   defaultPlaybackSpeed:
-    'Applied to every video. While watching, [RED] steps through the speeds and remembers the choice.',
+    'Applied to every video. The "Cycle playback speed" button steps through the speeds and remembers the choice.',
   forceHighResVideo: 'Selects the highest available resolution on start.',
   videoCodec:
     'Plays only the chosen codec when the video offers it. VP9 or AVC help TVs that stall on AV1 streams. AVC is limited to 1080p.',
@@ -277,6 +366,21 @@ const optionHelp = {
     'Replaces clickbait titles with community submissions (dearrow.ajay.app). New titles may only show after a page is reloaded.',
   enableDeArrowThumbnails:
     'Also replaces thumbnails with a frame from the video chosen by the community.',
+  language: 'Language of this settings panel and of notifications.',
+  blockedKeywords:
+    'Videos whose title contains one of these words are hidden (not case-sensitive).',
+  hiddenShelves:
+    'Shelves whose title contains one of these words are hidden, e.g. "Most relevant" or "Breaking news".',
+  minVideoLength: 'Hides videos shorter than this in feeds and search.',
+  hideWatchRecommendations:
+    'Removes the suggested videos below the player. Playlists are not affected.',
+  clockFormat: 'Automatic follows the language of the TV.',
+  clockShowDate: 'Shows the weekday and date in front of the time.',
+  notificationPosition: 'Where messages like "Skipping sponsor" appear.',
+  notificationDuration: 'How long messages stay on screen.',
+  redButton: 'Action of the red button while watching a video.',
+  yellowButton: 'Action of the yellow button while watching a video.',
+  blueButton: 'Action of the blue button while watching a video.',
   hideLogo: 'Hides the YouTube logo in the top-right corner.',
   showWatch: 'Shows the current time in the top-right corner.',
   showWatchAlways: 'Keeps the clock visible while a video plays.',
@@ -285,7 +389,7 @@ const optionHelp = {
   enableSponsorBlock:
     'Skip or mark sponsored and other segments (sponsor.ajay.app).',
   enableSponsorBlockHighlight:
-    'If a video has a highlight, [YELLOW] jumps to it.',
+    'If a video has a highlight, the SponsorBlock button jumps to it.',
   enableSponsorBlockNotifications:
     'Shows a short message when a segment is skipped.'
 };
@@ -296,7 +400,7 @@ for (const [key, help] of Object.entries(optionHelp)) {
 }
 
 const sponsorBlockModeHelp =
-  'Skip: automatic. Ask: [YELLOW] skips while the segment plays. Show only: marked on the progress bar.';
+  'Skip: automatic. Ask: the SponsorBlock button skips while the segment plays. Show only: marked on the progress bar.';
 for (const option of configOptions.values()) {
   if (option.choices === SPONSORBLOCK_MODES && !option.help) {
     option.help = sponsorBlockModeHelp;

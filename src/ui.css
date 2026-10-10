@@ -22,8 +22,14 @@
 
 .ytaf-ui-container h1 {
   margin: 0;
-  margin-bottom: 0.5em;
+  font-size: 1.6rem;
+  line-height: 2.2rem;
   text-align: center;
+}
+
+.ytaf-ui-container button,
+.ytaf-ui-container input {
+  font-family: inherit;
 }
 
 .ytaf-ui-container input[type='checkbox'] {
@@ -166,7 +172,7 @@ body.ytaf-audio-only video {
 
 .ytaf-ui-body {
   position: absolute;
-  top: 4rem;
+  top: 5.6rem;
   left: 1em;
   right: 1em;
   bottom: 5.5rem;
@@ -212,4 +218,58 @@ body.ytaf-audio-only video {
 
 .ytaf-ui-log-warn {
   color: #ffd080;
+}
+
+/* Notification positions */
+.ytaf-notification-container.ytaf-notification-top-right {
+  top: 10px;
+  bottom: auto;
+}
+
+.ytaf-notification-container.ytaf-notification-bottom-left,
+.ytaf-notification-container.ytaf-notification-top-left {
+  left: 10px;
+  right: auto;
+}
+
+.ytaf-notification-container.ytaf-notification-top-left {
+  top: 10px;
+  bottom: auto;
+}
+
+.ytaf-notification-bottom-left .message,
+.ytaf-notification-top-left .message {
+  float: left;
+}
+
+/* Settings tabs */
+.ytaf-ui-tabs {
+  position: absolute;
+  top: 3.4rem;
+  left: 1em;
+  right: 1em;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.ytaf-ui-container .ytaf-ui-tab {
+  display: inline-block;
+  margin-right: 0.3em;
+  padding: 0.15em 0.6em;
+  font-size: 1rem;
+  color: #ccc;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+  border-radius: 0.4em;
+}
+
+.ytaf-ui-container .ytaf-ui-tab.ytaf-ui-tab-active {
+  color: white;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.ytaf-ui-container .ytaf-ui-text {
+  font-size: 1.1rem;
+  width: 60%;
+  padding: 0.2em 0.4em;
 }
