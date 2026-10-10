@@ -72,7 +72,9 @@ export function getButtonLabel(action) {
 const ACTION_LABELS = {
   speed: 'Cycle playback speed',
   sponsorblock: 'SponsorBlock skip/highlight',
-  audioOnly: 'Audio-only mode'
+  audioOnly: 'Audio-only mode',
+  nextChapter: 'Next chapter',
+  stats: 'Toggle playback statistics'
 };
 
 setKeyLegendProvider(() => {
@@ -245,11 +247,44 @@ function applyUIFixes() {
 let audioOnlyEnabled = false;
 let overlayObserver = null;
 
+/* Optional black screen while in audio-only mode (saves OLED panels). */
+const DIM_DELAY_MS = 10000;
+const dimOverlay = document.createElement('div');
+dimOverlay.className = 'ytaf-dim';
+dimOverlay.style.display = 'none';
+document.body.appendChild(dimOverlay);
+let dimTimer;
+
+function scheduleDim() {
+  clearTimeout(dimTimer);
+  dimOverlay.style.display = 'none';
+  if (audioOnlyEnabled && configRead('audioOnlyDim')) {
+    dimTimer = setTimeout(() => {
+      dimOverlay.style.display = 'block';
+    }, DIM_DELAY_MS);
+  }
+}
+
+document.addEventListener(
+  'keydown',
+  (evt) => {
+    const wasDimmed = dimOverlay.style.display !== 'none';
+    scheduleDim();
+    if (wasDimmed) {
+      // The first press only wakes the screen.
+      evt.preventDefault();
+      evt.stopPropagation();
+    }
+  },
+  true
+);
+
 async function initAudioOnlyToggle() {
   audioOnlyEnabled = !audioOnlyEnabled;
   // A class on <body> survives YouTube rewriting the <video> style when the
   // next video in a playlist starts, unlike an inline style.
   document.body.classList.toggle('ytaf-audio-only', audioOnlyEnabled);
+  scheduleDim();
 
   const AUDIO_OVERLAY_SELECTOR = '.ytLrAudioPlayerOverlayAudioMode';
   const YTAF_OVERLAY_CLASS = 'ytaf-ui-watchControl-overlayMessage';

@@ -38,4 +38,7 @@ import './return-dislike';
 import './time-remaining';
 import './sleep-timer';
 import './start-page';
+import './seek-step';
+import './playback-stats';
+import './chapters';
 import './appearance';

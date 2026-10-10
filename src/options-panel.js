@@ -368,6 +368,10 @@ const PAGES = [
         'maxResolution',
         'forceOriginalAudio',
         'disableAutoCaptions',
+        'subtitleLanguage',
+        'seekStep',
+        'showStats',
+        'audioOnlyDim',
         'removeEndscreen',
         'enableLiveCatchup',
         'enableReturnDislike'
@@ -384,6 +388,7 @@ const PAGES = [
         'hideMembersOnly',
         'minVideoLength',
         'hideWatchRecommendations',
+        'disablePreviews',
         'upgradeThumbnails',
         'enableDeArrow',
         'enableDeArrowThumbnails'
@@ -432,6 +437,8 @@ const PAGES = [
         'enableSponsorBlockPreview',
         'enableSponsorBlockFiller',
         'enableSponsorBlockHighlight',
+        'sponsorBlockMinLength',
+        'sponsorBlockSkipOnce',
         'enableSponsorBlockNotifications'
       ]);
       const elmLink = document.createElement('small');

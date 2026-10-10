@@ -273,3 +273,13 @@ body.ytaf-audio-only video {
   width: 60%;
   padding: 0.2em 0.4em;
 }
+
+.ytaf-dim {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+  z-index: 2000;
+}

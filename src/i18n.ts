@@ -66,6 +66,13 @@ const de: Record<string, string> = {
   'opt.mutePreviews': 'Vorschauvideos stummschalten',
   'opt.enableLiveCatchup': 'Live-Verzögerung verringern (zur Live-Kante)',
   'opt.autoAccountSelect': 'Kontoauswahl beim Start überspringen',
+  'opt.subtitleLanguage': 'Untertitel',
+  'opt.seekStep': 'Spulschritt bei ausgeblendeter Steuerung',
+  'opt.showStats': 'Wiedergabestatistik anzeigen',
+  'opt.disablePreviews': 'Vorschauvideos beim Stöbern abschalten',
+  'opt.audioOnlyDim': 'Schwarzer Bildschirm im Nur-Audio-Modus',
+  'opt.sponsorBlockMinLength': 'Abschnitte ignorieren, kürzer als',
+  'opt.sponsorBlockSkipOnce': 'Jeden Abschnitt nur einmal überspringen',
 
   // Help
   'help.language': 'Sprache dieses Menüs und der Hinweise.',
@@ -144,6 +151,20 @@ const de: Record<string, string> = {
     'Hat ein Video ein Highlight, springt die SponsorBlock-Taste dorthin.',
   'help.enableSponsorBlockNotifications':
     'Zeigt einen kurzen Hinweis, wenn ein Abschnitt übersprungen wird.',
+  'help.subtitleLanguage':
+    'Schaltet Untertitel in dieser Sprache ein, wenn das Video welche hat. Hochgeladene Untertitel werden automatisch erzeugten vorgezogen.',
+  'help.seekStep':
+    'Links und rechts springen um diesen Wert, solange die Steuerelemente ausgeblendet sind.',
+  'help.showStats':
+    'Zeigt Auflösung, Codec, verworfene Bilder und Puffer, solange die Steuerelemente sichtbar sind.',
+  'help.disablePreviews':
+    'Das Fokussieren einer Kachel startet keine Vorschau mehr.',
+  'help.audioOnlyDim':
+    'Im Nur-Audio-Modus wird der Bildschirm nach 10 Sekunden ohne Eingabe schwarz. Jede Taste weckt ihn wieder.',
+  'help.sponsorBlockMinLength':
+    'Sehr kurze Abschnitte werden weder übersprungen noch angeboten.',
+  'help.sponsorBlockSkipOnce':
+    'Spulst du in einen übersprungenen Abschnitt zurück, läuft er normal.',
   'help.sponsorBlockMode':
     'Überspringen: automatisch. Fragen: die SponsorBlock-Taste überspringt, solange der Abschnitt läuft. Nur anzeigen: Markierung im Fortschrittsbalken.',
 
@@ -172,6 +193,8 @@ const de: Record<string, string> = {
   'choice.Cycle playback speed': 'Geschwindigkeit wechseln',
   'choice.SponsorBlock skip/highlight': 'SponsorBlock überspringen/Highlight',
   'choice.Audio-only mode': 'Nur-Audio-Modus',
+  'choice.Next chapter': 'Nächstes Kapitel',
+  'choice.Toggle playback statistics': 'Statistik ein/aus',
 
   // Panel
   'ui.General': 'Allgemein',
@@ -212,6 +235,9 @@ const de: Record<string, string> = {
   'msg.sleepWarning': 'Sleep-Timer: Pause in 1 Minute',
   'msg.sleepFired': 'Sleep-Timer: Wiedergabe pausiert',
   'msg.channelBlocked': 'Kanal gesperrt: {name}',
+  'msg.seek': '{delta} s',
+  'msg.noChapter': 'Kein weiteres Kapitel',
+  'msg.nextChapter': 'Nächstes Kapitel',
 
   // SponsorBlock segment names used in notifications
   'segment.sponsor': 'Sponsor',

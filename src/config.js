@@ -26,7 +26,9 @@ const BUTTON_ACTIONS = [
   { value: 'none', label: 'YouTube default' },
   { value: 'speed', label: 'Cycle playback speed' },
   { value: 'sponsorblock', label: 'SponsorBlock skip/highlight' },
-  { value: 'audioOnly', label: 'Audio-only mode' }
+  { value: 'audioOnly', label: 'Audio-only mode' },
+  { value: 'nextChapter', label: 'Next chapter' },
+  { value: 'stats', label: 'Toggle playback statistics' }
 ];
 
 const configOptions = new Map([
@@ -162,6 +164,21 @@ const configOptions = new Map([
     { default: true, desc: 'Offer jump to highlight' }
   ],
   [
+    'sponsorBlockMinLength',
+    {
+      default: 0,
+      desc: 'Ignore segments shorter than',
+      choices: [0, 1, 3, 5, 10].map((value) => ({
+        value,
+        label: value ? `${value} s` : 'Off'
+      }))
+    }
+  ],
+  [
+    'sponsorBlockSkipOnce',
+    { default: true, desc: 'Skip each segment only once' }
+  ],
+  [
     'enableSponsorBlockNotifications',
     { default: true, desc: 'Show skip notifications' }
   ],
@@ -214,6 +231,41 @@ const configOptions = new Map([
     'disableAutoCaptions',
     { default: false, desc: 'Do not turn on subtitles automatically' }
   ],
+  [
+    'subtitleLanguage',
+    {
+      default: 'none',
+      desc: 'Subtitles',
+      choices: [
+        { value: 'none', label: 'YouTube default' },
+        { value: 'de', label: 'Deutsch' },
+        { value: 'en', label: 'English' },
+        { value: 'fr', label: 'Français' },
+        { value: 'es', label: 'Español' },
+        { value: 'it', label: 'Italiano' },
+        { value: 'nl', label: 'Nederlands' },
+        { value: 'pl', label: 'Polski' },
+        { value: 'tr', label: 'Türkçe' }
+      ]
+    }
+  ],
+  [
+    'seekStep',
+    {
+      default: 0,
+      desc: 'Seek step with hidden controls',
+      choices: [0, 5, 10, 15, 30, 60].map((value) => ({
+        value,
+        label: value ? `${value} s` : 'YouTube default'
+      }))
+    }
+  ],
+  ['showStats', { default: false, desc: 'Show playback statistics' }],
+  [
+    'disablePreviews',
+    { default: false, desc: 'Disable video previews while browsing' }
+  ],
+  ['audioOnlyDim', { default: false, desc: 'Black screen in audio-only mode' }],
   ['enableReturnDislike', { default: false, desc: 'Show dislike count' }],
   ['hideLogo', { default: false, desc: 'Hide YouTube logo' }],
   ['showWatch', { default: false, desc: 'Display time in UI' }],
@@ -381,6 +433,18 @@ const optionHelp = {
   redButton: 'Action of the red button while watching a video.',
   yellowButton: 'Action of the yellow button while watching a video.',
   blueButton: 'Action of the blue button while watching a video.',
+  subtitleLanguage:
+    'Turns subtitles on in this language when the video has them. Uploaded subtitles are preferred over auto-generated ones.',
+  seekStep:
+    'Left and right jump by this amount while the player controls are hidden.',
+  showStats:
+    'Shows resolution, codec, dropped frames and buffer while the controls are visible.',
+  disablePreviews: 'Focusing a tile no longer starts a preview.',
+  audioOnlyDim:
+    'In audio-only mode the screen turns black after 10 seconds without input. Any button wakes it up.',
+  sponsorBlockMinLength: 'Very short segments are neither skipped nor offered.',
+  sponsorBlockSkipOnce:
+    'After seeking back into a skipped segment it plays normally.',
   hideLogo: 'Hides the YouTube logo in the top-right corner.',
   showWatch: 'Shows the current time in the top-right corner.',
   showWatchAlways: 'Keeps the clock visible while a video plays.',

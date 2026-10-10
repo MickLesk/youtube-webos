@@ -207,6 +207,7 @@ function matchesAny(text: string | null, needles: string[]) {
 }
 
 interface Filters {
+  noPreviews: boolean;
   keywords: string[];
   shelves: string[];
   minLength: number;
@@ -386,6 +387,30 @@ function deArrow(item: Json) {
 
 /* ------------------------------ Walker ------------------------------ */
 
+/** Drop the command that starts an inline preview when a tile is focused. */
+function removePreview(item: Json) {
+  const tile = get(item, 'tileRenderer');
+  if (
+    isObject(tile) &&
+    get(tile, 'onFocusCommand', 'startInlinePlaybackCommand')
+  ) {
+    delete tile.onFocusCommand;
+  }
+
+  const context = get(
+    item,
+    'lockupViewModel',
+    'rendererContext',
+    'commandContext'
+  );
+  if (
+    isObject(context) &&
+    JSON.stringify(context.onFocus ?? '').includes('startInlinePlaybackCommand')
+  ) {
+    delete context.onFocus;
+  }
+}
+
 function walk(node: unknown, filters: Filters, dearrow: boolean, depth = 0) {
   if (depth > 64 || typeof node !== 'object' || node === null) return;
 
@@ -397,8 +422,9 @@ function walk(node: unknown, filters: Filters, dearrow: boolean, depth = 0) {
     return;
   }
 
-  if (dearrow && ('tileRenderer' in node || 'lockupViewModel' in node)) {
-    deArrow(node as Json);
+  if ('tileRenderer' in node || 'lockupViewModel' in node) {
+    if (dearrow) deArrow(node as Json);
+    if (filters.noPreviews) removePreview(node as Json);
   }
 
   for (const key in node) {
@@ -422,6 +448,7 @@ addParseHandler('feed-filters', (res) => {
     (configRead(key) as string[]).map((s) => s.toLowerCase());
 
   const filters: Filters = {
+    noPreviews: configRead('disablePreviews'),
     keywords: lowerList('blockedKeywords'),
     shelves: lowerList('hiddenShelves'),
     minLength: (Number(configRead('minVideoLength')) || 0) * 60,
@@ -436,6 +463,7 @@ addParseHandler('feed-filters', (res) => {
   const dearrow = configRead('enableDeArrow');
 
   const anyFilter =
+    filters.noPreviews ||
     filters.keywords.length > 0 ||
     filters.shelves.length > 0 ||
     filters.minLength > 0 ||

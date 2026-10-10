@@ -78,6 +78,41 @@ function disableAutoCaptions(res: Json) {
   }
 }
 
+/**
+ * Turn on subtitles in the preferred language when the video has them.
+ * Uploaded tracks win over auto-generated ones.
+ */
+function preferSubtitleLanguage(res: Json) {
+  const language = configRead('subtitleLanguage');
+  if (typeof language !== 'string' || language === 'none') return;
+
+  const captions = res.captions;
+  if (!isObject(captions)) return;
+  const renderer = captions.playerCaptionsTracklistRenderer;
+  if (!isObject(renderer)) return;
+
+  const tracks = asArray(renderer.captionTracks);
+  if (!tracks) return;
+
+  const matches = (track: unknown, asr: boolean) =>
+    isObject(track) &&
+    typeof track.languageCode === 'string' &&
+    track.languageCode.split('-')[0] === language &&
+    (track.kind === 'asr') === asr;
+
+  let index = tracks.findIndex((track) => matches(track, false));
+  if (index === -1) index = tracks.findIndex((track) => matches(track, true));
+  if (index === -1) return;
+
+  for (const audioTrack of asArray(renderer.audioTracks) ?? []) {
+    if (!isObject(audioTrack)) continue;
+    const indices = asArray(audioTrack.captionTrackIndices);
+    if (indices && !indices.includes(index)) indices.push(index);
+    audioTrack.defaultCaptionTrackIndex = index;
+    audioTrack.captionsInitialState = 'CAPTIONS_INITIAL_STATE_ON_REQUIRED';
+  }
+}
+
 /** Remove shopping/merch QR overlays and the paid promotion banner. */
 function removePromotions(res: Json) {
   if (!configRead('enableAdBlock')) return;
@@ -107,5 +142,6 @@ addParseHandler('player-response', (res) => {
   removeNags(res);
   forceOriginalAudio(res);
   disableAutoCaptions(res);
+  preferSubtitleLanguage(res);
   removePromotions(res);
 });
