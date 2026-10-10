@@ -29,9 +29,11 @@ import {
   resetSkipStats
 } from './sponsorblock-stats';
 import { t } from './i18n';
-import { clearLogEntries, getLogEntries } from './logger';
+import { clearLogEntries, createLogger, getLogEntries } from './logger';
 import './spatial-navigation-polyfill.js';
 import './options-panel.css';
+
+const logger = createLogger('options-panel');
 
 const KEY_LEFT = 37;
 const KEY_UP = 38;
@@ -1333,6 +1335,12 @@ function createOptionsPanel() {
     elm instanceof HTMLInputElement && elm.type === 'text';
   const onWindowKeyDown = (evt) => {
     if (!visible || isColorKey(evt)) return;
+    // Never trap the remote behind a panel that is not on screen.
+    if (!elmContainer.offsetWidth || !elmContainer.offsetHeight) {
+      logger.warn('panel has no size on screen, closing it');
+      hide();
+      return;
+    }
     lastKeyDown = evt.keyCode;
     reclaimFocus();
     onKeyDown(evt);
@@ -1361,10 +1369,20 @@ function createOptionsPanel() {
   function show() {
     if (visible) return;
     visible = true;
-    refresh();
     elmContainer.style.display = 'block';
-    showPage(currentPage);
-    navItems[currentPage].focus();
+    // A failing section must not leave an empty panel that swallows keys.
+    try {
+      refresh();
+    } catch (err) {
+      logger.error('refresh failed:', err);
+    }
+    try {
+      showPage(currentPage);
+      navItems[currentPage].focus();
+    } catch (err) {
+      logger.error('could not open the panel:', err);
+      hide();
+    }
   }
 
   function hide() {

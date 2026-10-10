@@ -1,23 +1,23 @@
 /*
  * Settings panel: header on top, sidebar on the left, options in the middle,
- * help column on the right. Sizes follow the screen height (vh on the panel,
- * em inside), so it looks the same on 720p and 4K and does not depend on the
- * font size YouTube uses.
+ * help column on the right. The panel font size is in rem like the rest of
+ * YouTube's UI, everything inside is in em. Viewport units (vh) are avoided:
+ * the webOS web runtime does not size them reliably.
  *
  * Plain absolute positioning instead of flexbox: webOS 3 (Chrome 38) only
  * has an old flexbox implementation.
  */
 .ytaf-ui-container {
-  position: fixed;
-  top: 4vh;
-  left: 3vw;
-  right: 3vw;
-  bottom: 4vh;
+  position: absolute;
+  top: 5%;
+  left: 3%;
+  right: 3%;
+  bottom: 5%;
   z-index: 1000;
   overflow: hidden;
 
   font-family: 'YouTube Sans', Roboto, Arial, sans-serif;
-  font-size: 2.4vh;
+  font-size: 1.1rem;
   line-height: 1.3;
   color: #f1f1f1;
   background: rgba(15, 15, 15, 0.97);
