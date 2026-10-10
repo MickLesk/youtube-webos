@@ -158,7 +158,58 @@ function itemJson(item: Json): string {
   }
 }
 
+function titleOf(item: Json): string | null {
+  return textOf(
+    get(item, 'tileRenderer', 'metadata', 'tileMetadataRenderer', 'title') ??
+      get(
+        item,
+        'lockupViewModel',
+        'metadata',
+        'lockupMetadataViewModel',
+        'title'
+      )
+  );
+}
+
+/** Finds the first text-like `title` in an object, skipping its content. */
+function findTitle(node: unknown, depth = 0): string | null {
+  if (!isObject(node) || depth > 4) return null;
+  const own = textOf(node.title);
+  if (own) return own;
+  for (const key of Object.keys(node)) {
+    if (key === 'content' || key === 'contents' || key === 'items') continue;
+    const found = findTitle(node[key], depth + 1);
+    if (found) return found;
+  }
+  return null;
+}
+
+function shelfTitleOf(item: Json): string | null {
+  return findTitle(item.shelfRenderer);
+}
+
+const DURATION_PATTERN =
+  /"(?:simpleText|text|content)":"(\d{1,2}(?::\d{2}){1,2})"/;
+
+/** Video length in seconds from the duration badge, or `null`. */
+function durationOf(item: Json): number | null {
+  const match = DURATION_PATTERN.exec(badgeJson(item));
+  if (!match) return null;
+  return match[1]!
+    .split(':')
+    .reduce((total, part) => total * 60 + Number(part), 0);
+}
+
+function matchesAny(text: string | null, needles: string[]) {
+  if (!text || !needles.length) return false;
+  const lower = text.toLowerCase();
+  return needles.some((needle) => lower.includes(needle));
+}
+
 interface Filters {
+  keywords: string[];
+  shelves: string[];
+  minLength: number;
   shorts: boolean;
   watched: boolean;
   channels: string[];
@@ -172,7 +223,15 @@ function shouldRemove(item: unknown, filters: Filters): boolean {
   if (!isObject(item)) return false;
   if (filters.nags && NAG_RENDERERS.some((key) => key in item)) return true;
   if (!('tileRenderer' in item) && !('lockupViewModel' in item)) {
-    return filters.shorts && 'shelfRenderer' in item && isShorts(item);
+    if (!('shelfRenderer' in item)) return false;
+    if (filters.shorts && isShorts(item)) return true;
+    return matchesAny(shelfTitleOf(item), filters.shelves);
+  }
+
+  if (matchesAny(titleOf(item), filters.keywords)) return true;
+  if (filters.minLength) {
+    const duration = durationOf(item);
+    if (duration !== null && duration < filters.minLength) return true;
   }
 
   if (filters.shorts && isShorts(item)) return true;
@@ -359,7 +418,13 @@ function looksLikeFeed(res: Json) {
 addParseHandler('feed-filters', (res) => {
   if (!looksLikeFeed(res)) return;
 
+  const lowerList = (key: string) =>
+    (configRead(key) as string[]).map((s) => s.toLowerCase());
+
   const filters: Filters = {
+    keywords: lowerList('blockedKeywords'),
+    shelves: lowerList('hiddenShelves'),
+    minLength: (Number(configRead('minVideoLength')) || 0) * 60,
     shorts: configRead('removeShorts'),
     watched: configRead('hideWatchedVideos') && !isHistoryPage(),
     channels: configRead('blockedChannels'),
@@ -371,6 +436,9 @@ addParseHandler('feed-filters', (res) => {
   const dearrow = configRead('enableDeArrow');
 
   const anyFilter =
+    filters.keywords.length > 0 ||
+    filters.shelves.length > 0 ||
+    filters.minLength > 0 ||
     filters.shorts ||
     filters.watched ||
     filters.channels.length > 0 ||
@@ -381,6 +449,24 @@ addParseHandler('feed-filters', (res) => {
   if (!anyFilter && !dearrow) return;
 
   walk(res, filters, dearrow);
+});
+
+/** Remove the suggested videos below the player on the watch page. */
+addParseHandler('watch-recommendations', (res) => {
+  if (!configRead('hideWatchRecommendations')) return;
+
+  const pivot = get(
+    res,
+    'contents',
+    'singleColumnWatchNextResults',
+    'pivot',
+    'sectionListRenderer'
+  );
+  if (!isObject(pivot) || !Array.isArray(pivot.contents)) return;
+
+  // An empty object instead of an empty list keeps the layout intact.
+  pivot.contents = [{}];
+  pivot.continuations = [];
 });
 
 // Lets the options panel offer "Block channel" for the video being watched.
