@@ -2,11 +2,37 @@ import { configRead, configAddChangeListener } from './config';
 import './watch.css';
 import { requireElement } from './player_api/helpers';
 
+/**
+ * Format the clock according to the clock settings. `hour12` is left to the
+ * locale in automatic mode.
+ * @param {Date} date
+ */
+function formatClock(date) {
+  const format = configRead('clockFormat');
+  /** @type {Intl.DateTimeFormatOptions} */
+  const timeOptions = { hour: 'numeric', minute: 'numeric' };
+  if (format === '24h') timeOptions.hour12 = false;
+  if (format === '12h') timeOptions.hour12 = true;
+
+  const time = new Intl.DateTimeFormat(navigator.language, timeOptions).format(
+    date
+  );
+  if (!configRead('clockShowDate')) return time;
+
+  const day = new Intl.DateTimeFormat(navigator.language, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'numeric'
+  }).format(date);
+  return `${day}  ${time}`;
+}
+
 class Watch {
   #watch;
   #timer;
   #attrChanges;
   #player;
+  #setTime;
   #PLAYER_SELECTOR = 'ytlr-watch-default';
 
   constructor() {
@@ -24,14 +50,10 @@ class Watch {
   startClock() {
     const nextSeg = (60 - new Date().getSeconds()) * 1000;
 
-    const formatter = new Intl.DateTimeFormat(navigator.language, {
-      hour: 'numeric',
-      minute: 'numeric'
-    });
-
     const setTime = () => {
-      this.#watch.innerText = formatter.format(new Date());
+      this.#watch.innerText = formatClock(new Date());
     };
+    this.#setTime = setTime;
 
     setTime();
     setTimeout(() => {
@@ -42,6 +64,7 @@ class Watch {
 
   refresh() {
     if (this.#player) this.changeVisibility(this.#player);
+    this.#setTime?.();
   }
 
   playerAppear(video) {
@@ -99,3 +122,7 @@ configAddChangeListener('showWatch', (evt) => {
 configAddChangeListener('showWatchAlways', () => {
   watchInstance?.refresh();
 });
+
+for (const key of ['clockFormat', 'clockShowDate']) {
+  configAddChangeListener(key, () => watchInstance?.refresh());
+}
