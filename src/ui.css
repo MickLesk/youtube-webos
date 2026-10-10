@@ -145,7 +145,7 @@ body.ytaf-audio-only video {
   visibility: hidden !important;
 }
 
-.ytaf-dislikes {
+.ytaf-player-overlay {
   position: fixed;
   left: 0;
   top: 0;
@@ -154,6 +154,7 @@ body.ytaf-audio-only video {
   border-radius: 0.5rem;
   padding: 0.4rem 0.6rem;
   font-size: 1.2rem;
+  line-height: 1.5;
   color: white;
   z-index: 1100;
 }

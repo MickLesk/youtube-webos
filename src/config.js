@@ -132,6 +132,21 @@ const configOptions = new Map([
     }
   ],
   [
+    'sleepTimer',
+    {
+      default: 0,
+      desc: 'Sleep timer',
+      choices: [0, 15, 30, 60, 90, 120].map((value) => ({
+        value,
+        label: value ? `${value} min` : 'Off'
+      }))
+    }
+  ],
+  [
+    'showTimeRemaining',
+    { default: false, desc: 'Show remaining time and end time' }
+  ],
+  [
     'hideYouThere',
     { default: true, desc: 'Never ask "Are you still watching?"' }
   ],
@@ -184,6 +199,10 @@ const optionHelp = {
     'Removes video ads, home screen ad tiles, shopping overlays and paid promotion banners.',
   autoAccountSelect:
     'Skips "Who is watching?" on startup and continues with the last used account.',
+  sleepTimer:
+    'Pauses playback after the chosen time. Starts when chosen and is not kept after restarting the app.',
+  showTimeRemaining:
+    'Shows how much time is left and when the video ends, including the playback speed, while the controls are visible.',
   hideYouThere: 'Playback no longer pauses to ask whether you are still there.',
   mutePreviews: 'Previews that play when a tile is focused start muted.',
   defaultPlaybackSpeed:

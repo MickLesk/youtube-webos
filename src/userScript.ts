@@ -35,4 +35,6 @@ import './live-catchup';
 import './mute-previews';
 import './playback-speed';
 import './return-dislike';
+import './time-remaining';
+import './sleep-timer';
 import './appearance';

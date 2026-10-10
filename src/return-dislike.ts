@@ -4,21 +4,16 @@
  */
 import { configAddChangeListener, configRead } from './config';
 import { getPlayerManager, PlayerMode } from './player_api';
-import { requireElement } from './player_api/helpers';
+import { addOverlayLine } from './player-overlay';
 
 const API = 'https://returnyoutubedislikeapi.com/votes';
-const PLAYER_SELECTOR = 'ytlr-watch-default';
 
 const playerManager = await getPlayerManager();
 
-const elm = document.createElement('div');
-elm.className = 'ytaf-dislikes';
-elm.style.display = 'none';
-document.body.appendChild(elm);
+const { line: elm, refresh } = addOverlayLine('ytaf-dislikes');
 
 let currentVideo: string | null = null;
 let hasData = false;
-let controlsVisible = false;
 
 const formatter = new Intl.NumberFormat(navigator.language, {
   notation: 'compact'
@@ -33,12 +28,9 @@ function format(n: number) {
 }
 
 function render() {
-  const visible =
-    configRead('enableReturnDislike') &&
-    hasData &&
-    controlsVisible &&
-    document.body.classList.contains('WEB_PAGE_TYPE_WATCH');
+  const visible = configRead('enableReturnDislike') && hasData;
   elm.style.display = visible ? 'block' : 'none';
+  refresh();
 }
 
 async function load(videoId: string) {
@@ -81,23 +73,4 @@ configAddChangeListener('enableReturnDislike', () => {
     void load(id);
   }
   render();
-});
-
-new MutationObserver(render).observe(document.body, {
-  attributes: true,
-  attributeFilter: ['class']
-});
-
-// The watch page marks the player focusable while controls are hidden.
-// Not awaited at the top level so other modules don't wait for playback.
-void requireElement(PLAYER_SELECTOR, HTMLElement).then((player) => {
-  const updateControls = () => {
-    controlsVisible = player.getAttribute('hybridnavfocusable') !== 'true';
-    render();
-  };
-  new MutationObserver(updateControls).observe(player, {
-    attributes: true,
-    attributeFilter: ['hybridnavfocusable']
-  });
-  updateControls();
 });

@@ -376,6 +376,8 @@ function createOptionsPanel() {
   elmBody.appendChild(
     createSection('Playback', [
       'defaultPlaybackSpeed',
+      'sleepTimer',
+      'showTimeRemaining',
       'forceHighResVideo',
       'forceVp9Codec',
       'forceOriginalAudio',
