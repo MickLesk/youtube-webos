@@ -1,3 +1,4 @@
+import { sponsorBlockOffForCurrentChannel } from './channel-settings';
 import sha256 from 'tiny-sha256';
 import { configRead } from './config';
 import { getButtonLabel, setColorActionHandler, showNotification } from './ui';
@@ -139,6 +140,11 @@ class SponsorBlockHandler {
 
     // The handler may have been destroyed while the request was in flight.
     if (!this.active) return;
+
+    if (sponsorBlockOffForCurrentChannel()) {
+      console.debug(this.videoID, 'SponsorBlock off for this channel.');
+      return;
+    }
 
     const result = Array.isArray(results)
       ? results.find((v) => v.videoID === this.videoID)

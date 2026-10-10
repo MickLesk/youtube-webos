@@ -15,6 +15,12 @@ import {
   configGetHelp,
   configResetAll
 } from './config.js';
+import {
+  getChannelSettings,
+  getChannelsWithSettings,
+  removeChannelSettings,
+  setChannelSetting
+} from './channel-settings';
 import { t } from './i18n';
 import { clearLogEntries, getLogEntries } from './logger';
 
@@ -266,6 +272,115 @@ function createBlockedChannelsSection() {
   return elmSection;
 }
 
+/* --------------------------- Channel settings --------------------------- */
+
+const CHANNEL_SPEEDS = [undefined, 0.75, 1, 1.25, 1.5, 1.75, 2];
+
+function describeChannelSettings(settings) {
+  const parts = [];
+  if (settings.speed) parts.push(`${settings.speed}x`);
+  if (settings.noSponsorBlock) {
+    parts.push(t('ui.channelNoSponsorBlock', 'no SponsorBlock'));
+  }
+  return parts.join(', ');
+}
+
+function createChannelSection() {
+  const elmSection = document.createElement('div');
+  const elmHeading = createHeading('');
+  elmSection.appendChild(elmHeading);
+
+  const getChannel = () => currentChannelProvider?.() || null;
+
+  const elmSpeed = createButton(
+    '',
+    () => {
+      const channel = getChannel();
+      if (!channel) return;
+      const current = getChannelSettings(channel).speed;
+      const index = CHANNEL_SPEEDS.indexOf(current);
+      const next = CHANNEL_SPEEDS[(index + 1) % CHANNEL_SPEEDS.length];
+      setChannelSetting(channel, 'speed', next);
+    },
+    'channelSettings'
+  );
+  const elmSponsor = createButton(
+    '',
+    () => {
+      const channel = getChannel();
+      if (!channel) return;
+      const off = !!getChannelSettings(channel).noSponsorBlock;
+      setChannelSetting(channel, 'noSponsorBlock', off ? undefined : true);
+    },
+    'channelSettings'
+  );
+  elmSection.appendChild(elmSpeed);
+  elmSection.appendChild(elmSponsor);
+
+  const elmList = document.createElement('div');
+  elmSection.appendChild(elmList);
+
+  const render = () => {
+    const channel = getChannel();
+    elmHeading.textContent = channel
+      ? t('ui.channelSettingsFor', 'This channel: {name}', { name: channel })
+      : t('ui.channelSettings', 'Channel settings');
+    elmSpeed.style.display = channel ? '' : 'none';
+    elmSponsor.style.display = channel ? '' : 'none';
+
+    if (channel) {
+      const settings = getChannelSettings(channel);
+      elmSpeed.textContent = t(
+        'ui.channelSpeed',
+        'Speed for this channel: {speed}',
+        {
+          speed: settings.speed
+            ? `${settings.speed}x`
+            : t('ui.default', 'Default')
+        }
+      );
+      elmSponsor.textContent = t(
+        'ui.channelSponsorBlock',
+        'SponsorBlock for this channel: {state}',
+        {
+          state: settings.noSponsorBlock
+            ? t('msg.off', 'Off')
+            : t('msg.on', 'On')
+        }
+      );
+    }
+
+    elmList.textContent = '';
+    const channels = getChannelsWithSettings();
+    if (!channels.length && !channel) {
+      const elmEmpty = document.createElement('small');
+      elmEmpty.textContent = t(
+        'ui.channelSettingsEmpty',
+        'Open this panel while watching to set speed or SponsorBlock for that channel.'
+      );
+      elmList.appendChild(elmEmpty);
+    }
+    for (const name of channels) {
+      elmList.appendChild(
+        createButton(
+          t('ui.channelReset', 'Reset: {name} ({settings})', {
+            name,
+            settings: describeChannelSettings(getChannelSettings(name))
+          }),
+          () => removeChannelSettings(name),
+          'channelSettings'
+        )
+      );
+    }
+  };
+
+  configAddChangeListener('channelSettings', render);
+  elmSection.addEventListener('ytaf-refresh', render);
+  render();
+
+  return elmSection;
+}
+
 /* ----------------------------- Diagnostics ----------------------------- */
 
 function formatTime(date) {
@@ -273,8 +388,33 @@ function formatTime(date) {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
+/** @type {(() => string[])[]} */
+const diagnosticsProviders = [];
+
+/**
+ * Add status lines to the Diagnostics page (self-test, updates).
+ * @param {() => string[]} provider
+ */
+export function addDiagnosticsLines(provider) {
+  diagnosticsProviders.push(provider);
+}
+
 function createDiagnosticsSection() {
   const elmSection = document.createElement('div');
+
+  const elmStatus = document.createElement('div');
+  elmStatus.className = 'ytaf-ui-log';
+  elmSection.appendChild(elmStatus);
+  const renderStatus = () => {
+    elmStatus.textContent = '';
+    for (const provider of diagnosticsProviders) {
+      for (const text of provider()) {
+        const elmLine = document.createElement('div');
+        elmLine.textContent = text;
+        elmStatus.appendChild(elmLine);
+      }
+    }
+  };
 
   const elmLog = document.createElement('div');
   elmLog.className = 'ytaf-ui-log';
@@ -327,6 +467,8 @@ function createDiagnosticsSection() {
   elmSection.appendChild(elmReset);
   elmSection.appendChild(elmLog);
 
+  elmSection.addEventListener('ytaf-refresh', renderStatus);
+  renderStatus();
   elmSection.addEventListener('ytaf-refresh', render);
   render();
 
@@ -354,13 +496,14 @@ const PAGES = [
         'hideYouThere',
         'hideNags',
         'mutePreviews',
-        'enhancedLongPress'
+        'enhancedLongPress',
+        'checkForUpdates'
       ])
   },
   {
     title: 'Playback',
-    build: () =>
-      createKeyList([
+    build: () => {
+      const elmPage = createKeyList([
         'defaultPlaybackSpeed',
         'sleepTimer',
         'showTimeRemaining',
@@ -377,8 +520,13 @@ const PAGES = [
         'removeEndscreen',
         'enableLiveCatchup',
         'enableLiveChat',
-        'enableReturnDislike'
-      ])
+        'enableReturnDislike',
+        'rememberPosition',
+        'numberKeySeek'
+      ]);
+      elmPage.appendChild(createChannelSection());
+      return elmPage;
+    }
   },
   {
     title: 'Feeds',
@@ -386,6 +534,7 @@ const PAGES = [
       createKeyList([
         'removeShorts',
         'hideWatchedVideos',
+        'cleanSubscriptions',
         'hideLiveStreams',
         'hideUpcoming',
         'hideMembersOnly',
@@ -420,6 +569,7 @@ const PAGES = [
         'notificationPosition',
         'notificationDuration',
         'oledTheme',
+        'twemoji',
         'disableAnimations'
       ])
   },

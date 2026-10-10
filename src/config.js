@@ -31,7 +31,8 @@ const BUTTON_ACTIONS = [
   { value: 'stats', label: 'Toggle playback statistics' },
   { value: 'pip', label: 'Picture-in-picture' },
   { value: 'queueNext', label: 'Play next in queue' },
-  { value: 'liveChat', label: 'Show/hide live chat' }
+  { value: 'liveChat', label: 'Show/hide live chat' },
+  { value: 'quickMenu', label: 'Quick menu' }
 ];
 
 const configOptions = new Map([
@@ -66,6 +67,7 @@ const configOptions = new Map([
     { default: [], desc: 'Hide videos whose title contains' }
   ],
   ['hiddenShelves', { default: [], desc: 'Hide shelves whose title contains' }],
+  ['channelSettings', { default: {}, desc: 'Per-channel settings' }],
   [
     'minVideoLength',
     {
@@ -388,7 +390,18 @@ const configOptions = new Map([
     'enhancedLongPress',
     { default: true, desc: 'Extended long-press menu (queue, not interested)' }
   ],
-  ['enableLiveChat', { default: false, desc: 'Show live chat (experimental)' }]
+  ['enableLiveChat', { default: false, desc: 'Show live chat (experimental)' }],
+  ['checkForUpdates', { default: true, desc: 'Check for updates' }],
+  [
+    'rememberPosition',
+    { default: true, desc: 'Continue videos where you stopped' }
+  ],
+  [
+    'cleanSubscriptions',
+    { default: false, desc: 'Subscriptions: only new videos' }
+  ],
+  ['numberKeySeek', { default: true, desc: 'Number keys jump to 0-90 %' }],
+  ['twemoji', { default: false, desc: 'Show emoji as images (older TVs)' }]
 ]);
 
 /** Longer explanations, shown at the bottom of the panel on focus. */
@@ -422,8 +435,20 @@ const optionHelp = {
   disableAutoCaptions:
     'YouTube may switch subtitles on when the audio language differs from yours. This stops that.',
   removeEndscreen: 'Hides the video suggestions shown over the last seconds.',
+  checkForUpdates:
+    'Looks for a newer release on GitHub once a day and shows a notice. Nothing is installed automatically.',
+  rememberPosition:
+    'Saves the position of videos longer than 5 minutes and continues there, also without YouTube history. Only used when YouTube starts the video from the beginning.',
+  cleanSubscriptions:
+    'Hides Shorts and already watched videos on the subscriptions page only, so it shows what is new.',
+  numberKeySeek:
+    'While watching, 0 jumps to the start, 5 to the middle, 9 to 90 %.',
+  twemoji:
+    'Older webOS versions show empty boxes instead of emoji. This loads emoji images instead.',
+  channelSettings:
+    'While watching, set a playback speed or turn SponsorBlock off for this channel only. Applies to all videos of the channel.',
   enhancedLongPress:
-    'Hold OK on a video for "Add to queue", "Not interested" and "Don\'t recommend channel". Queued videos play after the current one.',
+    'Hold OK on a video for "Add to queue", "Not interested", "Don\'t recommend channel" and "Block channel". Queued videos play after the current one.',
   enableLiveChat:
     'Shows the chat of live streams and the chat replay of past streams next to the player. Can be toggled with a color button.',
   enableLiveCatchup:

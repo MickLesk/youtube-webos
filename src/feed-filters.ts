@@ -121,6 +121,10 @@ function channelOf(item: Json): string | null {
   return textOf(tileLine ?? lockupLine)?.trim() || null;
 }
 
+function isSubscriptionsPage() {
+  return location.hash.includes('FEsubscriptions');
+}
+
 function isHistoryPage() {
   return location.hash.includes('FEhistory');
 }
@@ -461,6 +465,12 @@ addParseHandler('feed-filters', (res) => {
     members: configRead('hideMembersOnly')
   };
   const dearrow = configRead('enableDeArrow');
+
+  // Subscriptions only show what is new: no Shorts, nothing already watched.
+  if (configRead('cleanSubscriptions') && isSubscriptionsPage()) {
+    filters.shorts = true;
+    filters.watched = true;
+  }
 
   const anyFilter =
     filters.noPreviews ||

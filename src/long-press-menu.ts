@@ -7,7 +7,7 @@
  * Adapted from https://github.com/reisxd/TizenTube (mods/features/adblock.js,
  * mods/ui/ytUI.js)
  */
-import { configRead } from './config';
+import { configRead, configWrite } from './config';
 import { addParseHandler } from './hooks/json-parse';
 import { t } from './i18n';
 import {
@@ -220,6 +220,16 @@ function queueItem(info: TileInfo): Json {
   return item;
 }
 
+/** The first metadata line of a video tile is its channel. */
+function blockChannelItem(info: TileInfo): Json | null {
+  const name = info.subtitle.trim();
+  if (!name) return null;
+  return serviceItem(
+    t('ui.blockChannel', 'Block channel: {name}', { name }),
+    customActionEndpoint('blockChannel', { name })
+  );
+}
+
 function feedbackItems(panel: FeedbackPanel): Json[] {
   return [
     serviceItem(
@@ -309,12 +319,16 @@ function extendTile(node: Json) {
     if (panel && !hasFeedbackItems(items)) {
       for (const item of feedbackItems(panel)) items.push(item);
     }
+    const block = blockChannelItem(info);
+    if (block) items.push(block);
     return;
   }
 
   // YouTube opens a panel instead of a menu: offer a menu of our own.
   if (!info.title) return;
   const extra = [queueItem(info)].concat(panel ? feedbackItems(panel) : []);
+  const block = blockChannelItem(info);
+  if (block) extra.push(block);
   const menu = buildMenu(info, extra);
   info.holder[info.holderKey] =
     info.holderKey === 'onLongPress' ? { innertubeCommand: menu } : menu;
@@ -405,4 +419,15 @@ setCustomActionHandler('feedback', (params) => {
     console.warn('[long-press-menu] feedback failed:', err);
     showNotification(t('msg.feedbackFailed', 'Feedback not available'));
   });
+});
+
+setCustomActionHandler('blockChannel', (params) => {
+  const name = String(params.name);
+  const blocked = configRead('blockedChannels') as string[];
+  if (blocked.indexOf(name) === -1) {
+    configWrite('blockedChannels', blocked.concat([name]));
+  }
+  showNotification(
+    t('msg.channelBlocked', 'Channel blocked: {name}', { name })
+  );
 });

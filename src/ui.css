@@ -315,3 +315,38 @@ body.ytaf-audio-only video {
 .ytaf-live-chat-paid .ytaf-live-chat-author {
   color: #ffca28;
 }
+
+/* Quick menu while watching. */
+.ytaf-quick-menu {
+  position: fixed;
+  left: 2rem;
+  right: 2rem;
+  bottom: 2rem;
+  text-align: center;
+  z-index: 1200;
+  pointer-events: none;
+}
+
+.ytaf-quick-item {
+  display: inline-block;
+  margin: 0.25rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: #ddd;
+  font-size: 1.2rem;
+  border: 0.15rem solid transparent;
+}
+
+.ytaf-quick-item-focused {
+  color: white;
+  border-color: white;
+  background-color: rgba(60, 60, 60, 0.9);
+}
+
+img.ytaf-emoji {
+  height: 1em;
+  width: 1em;
+  margin: 0 0.05em 0 0.1em;
+  vertical-align: -0.1em;
+}

@@ -275,6 +275,60 @@ const de: Record<string, string> = {
   'msg.feedbackFailed': 'Feedback nicht verfügbar',
   'msg.pipUnavailable': 'Bild-in-Bild ist nicht verfügbar',
   'msg.noLiveChat': 'Kein Chat für dieses Video',
+  'msg.updateAvailable':
+    'Update verfügbar: v{version} (installiert v{current})',
+  'msg.resumed': 'Weiter bei {time}',
+  'opt.checkForUpdates': 'Nach Updates suchen',
+  'opt.rememberPosition': 'Videos dort fortsetzen, wo du aufgehört hast',
+  'opt.cleanSubscriptions': 'Abos: nur neue Videos',
+  'opt.numberKeySeek': 'Zifferntasten springen auf 0–90 %',
+  'opt.twemoji': 'Emojis als Bilder anzeigen (ältere Fernseher)',
+  'opt.channelSettings': 'Kanal-Einstellungen',
+  'help.checkForUpdates':
+    'Sucht einmal am Tag auf GitHub nach einer neueren Version und zeigt einen Hinweis. Es wird nichts automatisch installiert.',
+  'help.rememberPosition':
+    'Merkt sich die Position von Videos über 5 Minuten und setzt dort fort, auch ohne YouTube-Verlauf. Greift nur, wenn YouTube das Video von vorne startet.',
+  'help.cleanSubscriptions':
+    'Blendet nur auf der Abo-Seite Shorts und bereits gesehene Videos aus, damit dort nur Neues steht.',
+  'help.numberKeySeek':
+    'Während der Wiedergabe springt 0 an den Anfang, 5 in die Mitte, 9 auf 90 %.',
+  'help.twemoji':
+    'Ältere webOS-Versionen zeigen leere Kästchen statt Emojis. Damit werden stattdessen Emoji-Bilder geladen.',
+  'help.channelSettings':
+    'Während ein Video läuft: Geschwindigkeit festlegen oder SponsorBlock nur für diesen Kanal abschalten. Gilt für alle Videos des Kanals.',
+  'choice.Quick menu': 'Schnellmenü',
+  'ui.channelSettings': 'Kanal-Einstellungen',
+  'ui.channelSettingsFor': 'Dieser Kanal: {name}',
+  'ui.channelSpeed': 'Geschwindigkeit für diesen Kanal: {speed}',
+  'ui.channelSponsorBlock': 'SponsorBlock für diesen Kanal: {state}',
+  'ui.channelNoSponsorBlock': 'ohne SponsorBlock',
+  'ui.channelReset': 'Zurücksetzen: {name} ({settings})',
+  'ui.channelSettingsEmpty':
+    'Öffne dieses Menü während eines Videos, um Geschwindigkeit oder SponsorBlock für diesen Kanal festzulegen.',
+  'ui.default': 'Standard',
+  'ui.updateAvailable': 'Version {current}, Update verfügbar: {version}',
+  'ui.versionCurrent': 'Version {current}',
+  'selftest.Command hook': 'Befehls-Hook',
+  'selftest.API client': 'API-Client',
+  'selftest.Player service': 'Player-Dienst',
+  'selftest.Video player': 'Videoplayer',
+  'selftest.pending': 'noch nicht geprüft',
+  'selftest.missing': 'nicht gefunden',
+  'selftest.affects.Command hook':
+    'Kontoauswahl überspringen, Langdruck-Menü, Einstellungs-Eintrag',
+  'selftest.affects.API client': '„Kein Interesse“, „Kanal nicht empfehlen“',
+  'selftest.affects.Player service': 'Bild-in-Bild',
+  'selftest.affects.Video player':
+    'Geschwindigkeit, SponsorBlock, Einblendungen, Warteschlange',
+  'quick.speed': 'Tempo: {speed}x',
+  'quick.subtitles': 'Untertitel: {state}',
+  'quick.audioOnly': 'Nur Audio: {state}',
+  'quick.sleep': 'Sleep-Timer: {value}',
+  'quick.resolution': 'Max. Auflösung: {value}',
+  'quick.stats': 'Statistik: {state}',
+  'quick.chapter': 'Nächstes Kapitel',
+  'quick.queue': 'Nächstes aus Warteschlange ({count})',
+  'quick.pip': 'Bild-in-Bild',
 
   // SponsorBlock segment names used in notifications
   'segment.sponsor': 'Sponsor',

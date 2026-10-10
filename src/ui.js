@@ -60,6 +60,16 @@ export function setColorActionHandler(action, handler) {
 }
 
 /**
+ * Run a color button action directly, e.g. from the quick menu.
+ * @param {string} action
+ * @returns {boolean} `true` if the action did something
+ */
+export function runColorAction(action) {
+  const handler = colorActionHandlers.get(action);
+  return handler ? handler() : false;
+}
+
+/**
  * Label of the button currently mapped to `action`, e.g. "[YELLOW]", or
  * `null` if no button triggers it.
  * @param {string} action
@@ -77,7 +87,8 @@ const ACTION_LABELS = {
   stats: 'Toggle playback statistics',
   pip: 'Picture-in-picture',
   queueNext: 'Play next in queue',
-  liveChat: 'Show/hide live chat'
+  liveChat: 'Show/hide live chat',
+  quickMenu: 'Quick menu'
 };
 
 setKeyLegendProvider(() => {

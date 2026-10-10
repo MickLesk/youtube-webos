@@ -5,6 +5,11 @@
 import { configGetChoices, configRead, configWrite } from './config';
 import { getPlayerManager, PlayerMode } from './player_api';
 import type { PlayerManager } from './player_api';
+import {
+  currentChannel,
+  currentChannelSpeed,
+  setChannelSetting
+} from './channel-settings';
 import { t } from './i18n';
 import { setColorActionHandler, showNotification } from './ui';
 
@@ -36,7 +41,7 @@ function applySpeed(this: PlayerManager) {
   this.removeEventListener('playbackStart', applySpeed);
   if (this.playerMode !== PlayerMode.NORMAL) return;
 
-  const speed = getSpeed();
+  const speed = currentChannelSpeed() ?? getSpeed();
   if (getVideo()?.playbackRate !== speed) {
     setRate(speed);
     console.info('[playback-speed] set to', speed);
@@ -65,7 +70,13 @@ setColorActionHandler('speed', () => {
   const index = speeds.findIndex((s) => s > current + 0.01);
   const next = speeds[index === -1 ? 0 : index] ?? 1;
 
-  configWrite('defaultPlaybackSpeed', next);
+  // A channel with its own speed keeps it; otherwise change the default.
+  const channel = currentChannel();
+  if (channel && currentChannelSpeed() !== null) {
+    setChannelSetting(channel, 'speed', next);
+  } else {
+    configWrite('defaultPlaybackSpeed', next);
+  }
   setRate(next);
 
   showNotification(
