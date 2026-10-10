@@ -2,6 +2,7 @@
  * Tweaks applied to player and "next" responses before YouTube sees them.
  */
 import { configRead } from './config';
+import { addParseHandler } from './hooks/json-parse';
 
 type Json = Record<string, unknown>;
 
@@ -91,23 +92,9 @@ function removePromotions(res: Json) {
   });
 }
 
-const originalParse = JSON.parse;
-
-JSON.parse = function parse(
-  text: string,
-  reviver?: Parameters<typeof originalParse>[1]
-) {
-  const res = originalParse(text, reviver) as unknown;
-  if (!isObject(res)) return res;
-
-  try {
-    removeYouThere(res);
-    forceOriginalAudio(res);
-    disableAutoCaptions(res);
-    removePromotions(res);
-  } catch (err) {
-    console.error('[player-response] Failed to process response:', err);
-  }
-
-  return res;
-};
+addParseHandler('player-response', (res) => {
+  removeYouThere(res);
+  forceOriginalAudio(res);
+  disableAutoCaptions(res);
+  removePromotions(res);
+});

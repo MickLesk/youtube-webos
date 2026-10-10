@@ -1,4 +1,5 @@
 import { configRead } from './config';
+import { addParseHandler } from './hooks/json-parse';
 import { getPlayerManager, PlayerMode } from './player_api';
 import type { EventMapOf, PlayerManager, VideoQualityData } from './player_api';
 
@@ -121,14 +122,7 @@ function forceVp09(playerResponse: unknown) {
   }
 }
 
-const origParse = JSON.parse;
-JSON.parse = function (text, reviver) {
-  const r = origParse(text, reviver);
-
-  forceVp09(r);
-
-  return r;
-};
+addParseHandler('video-codec', forceVp09);
 
 const originalCanPlayType = HTMLMediaElement.prototype.canPlayType;
 HTMLMediaElement.prototype.canPlayType = function (mimeType) {

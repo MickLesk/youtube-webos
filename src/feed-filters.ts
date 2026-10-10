@@ -3,6 +3,7 @@
  * Shorts removal, hiding watched videos, blocked channels and DeArrow.
  */
 import { configRead } from './config';
+import { addParseHandler } from './hooks/json-parse';
 import { getPlayerManager, PlayerMode } from './player_api';
 import { setCurrentChannelProvider } from './ui';
 
@@ -311,14 +312,8 @@ function looksLikeFeed(res: Json) {
   );
 }
 
-const originalParse = JSON.parse;
-
-JSON.parse = function parse(
-  text: string,
-  reviver?: Parameters<typeof originalParse>[1]
-) {
-  const res = originalParse(text, reviver) as unknown;
-  if (!isObject(res) || !looksLikeFeed(res)) return res;
+addParseHandler('feed-filters', (res) => {
+  if (!looksLikeFeed(res)) return;
 
   const filters: Filters = {
     shorts: configRead('removeShorts'),
@@ -333,16 +328,10 @@ JSON.parse = function parse(
     !filters.channels.length &&
     !dearrow
   )
-    return res;
+    return;
 
-  try {
-    walk(res, filters, dearrow);
-  } catch (err) {
-    console.error('[feed-filters] Failed to process response:', err);
-  }
-
-  return res;
-};
+  walk(res, filters, dearrow);
+});
 
 // Lets the options panel offer "Block channel" for the video being watched.
 void getPlayerManager().then((playerManager) => {
