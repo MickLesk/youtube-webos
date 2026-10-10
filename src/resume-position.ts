@@ -90,25 +90,54 @@ function remember() {
   save(positions);
 }
 
+/** Give YouTube time to apply its own resume (watch history) first. */
+const RESUME_DELAY_MS = 2500;
+
+interface SeekablePlayer {
+  getCurrentTime?: () => number;
+  seekTo?: (seconds: number, allowSeekAhead?: boolean) => void;
+}
+
+/** Where YouTube's player is (or is about to be), not just the element. */
+function playerTime(video: HTMLVideoElement) {
+  const own = (player as unknown as SeekablePlayer).getCurrentTime?.();
+  return typeof own === 'number' && isFinite(own)
+    ? Math.max(own, video.currentTime)
+    : video.currentTime;
+}
+
+let resumeTimer: ReturnType<typeof setTimeout> | null = null;
+
 function resume(this: typeof playerManager) {
   this.removeEventListener('playbackStart', resume);
   if (!configRead('rememberPosition')) return;
 
   const videoId = this.currentVideoID;
-  const video = getVideo();
-  if (!videoId || !video || !isResumable(video)) return;
-  if (video.currentTime > START_TOLERANCE_S) return;
+  if (resumeTimer) clearTimeout(resumeTimer);
+  // Seeking the element while YouTube seeks to its own resume point left
+  // the player loading forever, so wait and only step in when it didn't.
+  resumeTimer = setTimeout(() => {
+    resumeTimer = null;
+    const video = getVideo();
+    if (!videoId || videoId !== playerManager.currentVideoID) return;
+    if (!video || !isResumable(video) || video.seeking || video.paused) return;
+    if (playerTime(video) > START_TOLERANCE_S + RESUME_DELAY_MS / 1000) return;
 
-  const entry = load()[videoId];
-  if (!entry || entry.t > video.duration - EDGE_S) return;
+    const entry = load()[videoId];
+    if (!entry || entry.t > video.duration - EDGE_S) return;
 
-  video.currentTime = entry.t;
-  showNotification(
-    t('msg.resumed', 'Continuing at {time}', { time: formatTime(entry.t) })
-  );
+    const seekable = player as unknown as SeekablePlayer;
+    if (typeof seekable.seekTo === 'function') seekable.seekTo(entry.t, true);
+    else video.currentTime = entry.t;
+    showNotification(
+      t('msg.resumed', 'Continuing at {time}', { time: formatTime(entry.t) })
+    );
+  }, RESUME_DELAY_MS);
 }
 
 playerManager.addEventListener('newVideo', function () {
+  if (resumeTimer) clearTimeout(resumeTimer);
+  resumeTimer = null;
   this.removeEventListener('playbackStart', resume);
   this.addEventListener('playbackStart', resume);
 });

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.5] - 2026/10/10
+
+### Fixed
+
+- Videos watched before could hang on the loading animation: continuing at the stored position no longer seeks while YouTube resumes from its own watch history, and seeks through the player instead of the video element
+
 ## [0.9.4] - 2026/10/10
 
 ### Fixed
