@@ -67,6 +67,8 @@ const de: Record<string, string> = {
   'opt.enableLiveCatchup': 'Live-Verzögerung verringern (zur Live-Kante)',
   'opt.autoAccountSelect': 'Kontoauswahl beim Start überspringen',
   'opt.subtitleLanguage': 'Untertitel',
+  'opt.enableScrollSeek': 'Mit dem Scrollrad der Magic Remote spulen',
+  'opt.sortSubscriptions': 'Abonnierte Kanäle alphabetisch sortieren',
   'opt.seekStep': 'Spulschritt bei ausgeblendeter Steuerung',
   'opt.showStats': 'Wiedergabestatistik anzeigen',
   'opt.disablePreviews': 'Vorschauvideos beim Stöbern abschalten',
@@ -151,6 +153,10 @@ const de: Record<string, string> = {
     'Hat ein Video ein Highlight, springt die SponsorBlock-Taste dorthin.',
   'help.enableSponsorBlockNotifications':
     'Zeigt einen kurzen Hinweis, wenn ein Abschnitt übersprungen wird.',
+  'help.enableScrollSeek':
+    'Ist der Fortschrittsbalken fokussiert, spult jede Raste 3 % des Videos (3 bis 100 Sekunden).',
+  'help.sortSubscriptions':
+    'Sortiert die Kanalliste auf der Abo-Seite nach Namen.',
   'help.subtitleLanguage':
     'Schaltet Untertitel in dieser Sprache ein, wenn das Video welche hat. Hochgeladene Untertitel werden automatisch erzeugten vorgezogen.',
   'help.seekStep':
@@ -236,6 +242,8 @@ const de: Record<string, string> = {
   'msg.sleepFired': 'Sleep-Timer: Wiedergabe pausiert',
   'msg.channelBlocked': 'Kanal gesperrt: {name}',
   'msg.seek': '{delta} s',
+  'msg.updated':
+    'Aktualisiert auf v{version} – neue Optionen in den Einstellungen (grüne Taste)',
   'msg.noChapter': 'Kein weiteres Kapitel',
   'msg.nextChapter': 'Nächstes Kapitel',
 

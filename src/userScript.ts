@@ -41,4 +41,7 @@ import './start-page';
 import './seek-step';
 import './playback-stats';
 import './chapters';
+import './scroll-seek';
+import './sort-subscriptions';
+import './whats-new';
 import './appearance';

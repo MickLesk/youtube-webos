@@ -260,6 +260,14 @@ const configOptions = new Map([
       }))
     }
   ],
+  [
+    'enableScrollSeek',
+    { default: false, desc: 'Seek with the Magic Remote scroll wheel' }
+  ],
+  [
+    'sortSubscriptions',
+    { default: false, desc: 'Sort subscribed channels alphabetically' }
+  ],
   ['showStats', { default: false, desc: 'Show playback statistics' }],
   [
     'disablePreviews',
@@ -437,6 +445,10 @@ const optionHelp = {
     'Turns subtitles on in this language when the video has them. Uploaded subtitles are preferred over auto-generated ones.',
   seekStep:
     'Left and right jump by this amount while the player controls are hidden.',
+  enableScrollSeek:
+    'While the progress bar is focused, each wheel notch seeks 3% of the video (3 to 100 seconds).',
+  sortSubscriptions:
+    'Sorts the channel list on the subscriptions page by name.',
   showStats:
     'Shows resolution, codec, dropped frames and buffer while the controls are visible.',
   disablePreviews: 'Focusing a tile no longer starts a preview.',

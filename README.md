@@ -48,6 +48,10 @@
 - Settings in English and German, organized in pages
 - Remappable color buttons (speed, SponsorBlock, audio-only)
 - Hide videos by title keyword, shelves by title and videos below a minimum length
+- Preferred subtitle language, adjustable seek step, Magic Remote scroll wheel seeking
+- Playback statistics overlay and next-chapter button
+- Black screen in audio-only mode, option to disable previews
+- Sorted subscriptions channel list
 - Version offset that stops the LG Content Store from replacing the app
 
 > [!NOTE]
