@@ -13,8 +13,6 @@
   padding: 1em;
   font-size: 1.4rem;
   z-index: 1000;
-  /* Keep all options reachable on smaller resolutions. */
-  overflow-y: auto;
 }
 
 .ytaf-ui-container :focus {
@@ -158,4 +156,59 @@ body.ytaf-audio-only video {
   font-size: 1.2rem;
   color: white;
   z-index: 1100;
+}
+
+/* Panel layout: scrolling body between a fixed heading and footer. */
+.ytaf-ui-container {
+  overflow: hidden;
+}
+
+.ytaf-ui-body {
+  position: absolute;
+  top: 4rem;
+  left: 1em;
+  right: 1em;
+  bottom: 5.5rem;
+  overflow-y: auto;
+}
+
+.ytaf-ui-footer {
+  position: absolute;
+  left: 1em;
+  right: 1em;
+  bottom: 0.6rem;
+  height: 4.6rem;
+  border-top: 1px solid rgb(52 52 52);
+  padding-top: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.ytaf-ui-help {
+  min-height: 2.4rem;
+  color: #ddd;
+}
+
+.ytaf-ui-keys {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.ytaf-ui-footer .ytaf-ui-version {
+  bottom: 0;
+  right: 0;
+}
+
+.ytaf-ui-log {
+  font-size: 0.8rem;
+  font-family: monospace;
+  color: #aaa;
+  margin-bottom: 0.4em;
+}
+
+.ytaf-ui-log-error {
+  color: #ff8080;
+}
+
+.ytaf-ui-log-warn {
+  color: #ffd080;
 }

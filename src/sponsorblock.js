@@ -1,6 +1,9 @@
 import sha256 from 'tiny-sha256';
 import { configRead } from './config';
 import { setColorKeyHandler, showNotification } from './ui';
+import { createLogger } from './logger';
+
+const logger = createLogger('sponsorblock');
 
 // Copied from https://github.com/ajayyy/SponsorBlock/blob/9392d16617d2d48abb6125c00e2ff6042cb7bebe/src/config.ts#L179-L233
 const barTypes = {
@@ -120,7 +123,7 @@ class SponsorBlockHandler {
 
       results = await resp.json();
     } catch (err) {
-      console.warn(this.videoID, 'Failed to fetch SponsorBlock segments:', err);
+      logger.warn(this.videoID, 'failed to fetch segments:', err);
       return;
     }
 

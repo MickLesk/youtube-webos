@@ -5,8 +5,11 @@ import {
   configRead,
   configWrite,
   configGetChoices,
-  configGetDesc
+  configGetDesc,
+  configGetHelp,
+  configResetAll
 } from './config.js';
+import { clearLogEntries, getLogEntries } from './logger';
 import './ui.css';
 import { requireElement } from './player_api/helpers';
 
@@ -59,6 +62,7 @@ function createConfigCheckbox(key) {
   });
 
   const elmLabel = document.createElement('label');
+  elmLabel.setAttribute('data-config-key', key);
   elmLabel.appendChild(elmInput);
   // Use non-breaking space (U+00A0)
   elmLabel.appendChild(document.createTextNode('\u00A0' + configGetDesc(key)));
@@ -93,6 +97,7 @@ function createConfigChoice(key) {
   const choices = configGetChoices(key);
   const elmButton = document.createElement('button');
   elmButton.className = 'ytaf-ui-choice';
+  elmButton.setAttribute('data-config-key', key);
 
   const render = () => {
     const value = configRead(key);
@@ -207,6 +212,93 @@ function createBlockedChannelsSection() {
   return elmSection;
 }
 
+/** @type {HTMLElement | null} */
+let helpElement = null;
+
+/**
+ * Show the help text of the focused control in the panel footer.
+ * @param {EventTarget | null} target
+ */
+function showHelpFor(target) {
+  if (!helpElement) return;
+  // Element.closest() is missing on webOS 3, so walk up manually.
+  let node = target instanceof HTMLElement ? target : null;
+  while (node && !node.hasAttribute('data-config-key')) {
+    node = node.parentElement;
+  }
+  const key = node?.getAttribute('data-config-key');
+  helpElement.textContent = key ? (configGetHelp(key) ?? '') : '';
+}
+
+function formatTime(date) {
+  const pad = (n) => (n < 10 ? '0' : '') + n;
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function createDiagnosticsSection() {
+  const elmSection = document.createElement('div');
+  const elmTitle = document.createElement('h2');
+  elmTitle.textContent = 'Diagnostics';
+  elmSection.appendChild(elmTitle);
+
+  const elmLog = document.createElement('div');
+  elmLog.className = 'ytaf-ui-log';
+  elmSection.appendChild(elmLog);
+
+  const render = () => {
+    const entries = getLogEntries().slice(-15).reverse();
+    elmLog.textContent = '';
+
+    if (!entries.length) {
+      elmLog.textContent = 'No warnings or errors logged.';
+      return;
+    }
+
+    for (const entry of entries) {
+      const elmEntry = document.createElement('div');
+      elmEntry.className = `ytaf-ui-log-${entry.level}`;
+      elmEntry.textContent = `${formatTime(entry.time)} [${entry.source}] ${entry.message}`;
+      elmLog.appendChild(elmEntry);
+    }
+  };
+
+  const elmClear = document.createElement('button');
+  elmClear.className = 'ytaf-ui-choice';
+  elmClear.textContent = 'Clear log';
+  elmClear.addEventListener('click', () => {
+    clearLogEntries();
+    render();
+  });
+  elmSection.appendChild(elmClear);
+
+  // Two presses needed, so a stray OK can't wipe the settings.
+  let resetArmed = false;
+  let resetTimer;
+  const elmReset = document.createElement('button');
+  elmReset.className = 'ytaf-ui-choice';
+  elmReset.textContent = 'Reset all settings';
+  elmReset.addEventListener('click', () => {
+    if (!resetArmed) {
+      resetArmed = true;
+      elmReset.textContent = 'Press OK again to reset all settings';
+      resetTimer = setTimeout(() => {
+        resetArmed = false;
+        elmReset.textContent = 'Reset all settings';
+      }, 5000);
+      return;
+    }
+    clearTimeout(resetTimer);
+    configResetAll();
+    window.location.reload();
+  });
+  elmSection.appendChild(elmReset);
+
+  elmSection.addEventListener('ytaf-refresh', render);
+  render();
+
+  return elmSection;
+}
+
 function createOptionsPanel() {
   const elmContainer = document.createElement('div');
 
@@ -218,7 +310,8 @@ function createOptionsPanel() {
     'focus',
     (evt) => {
       console.debug('Options panel focused!');
-      scrollIntoContainer(elmContainer, evt.target);
+      scrollIntoContainer(elmBody, evt.target);
+      showHelpFor(evt.target);
     },
     true
   );
@@ -267,7 +360,11 @@ function createOptionsPanel() {
   elmHeading.textContent = 'webOS YouTube Extended';
   elmContainer.appendChild(elmHeading);
 
-  elmContainer.appendChild(
+  const elmBody = document.createElement('div');
+  elmBody.className = 'ytaf-ui-body';
+  elmContainer.appendChild(elmBody);
+
+  elmBody.appendChild(
     createSection('General', [
       'enableAdBlock',
       'autoAccountSelect',
@@ -276,7 +373,7 @@ function createOptionsPanel() {
     ])
   );
 
-  elmContainer.appendChild(
+  elmBody.appendChild(
     createSection('Playback', [
       'defaultPlaybackSpeed',
       'forceHighResVideo',
@@ -289,7 +386,7 @@ function createOptionsPanel() {
     ])
   );
 
-  elmContainer.appendChild(
+  elmBody.appendChild(
     createSection('Feeds', [
       'removeShorts',
       'hideWatchedVideos',
@@ -299,9 +396,9 @@ function createOptionsPanel() {
     ])
   );
 
-  elmContainer.appendChild(createBlockedChannelsSection());
+  elmBody.appendChild(createBlockedChannelsSection());
 
-  elmContainer.appendChild(
+  elmBody.appendChild(
     createSection('Appearance', [
       'hideLogo',
       'showWatch',
@@ -311,9 +408,7 @@ function createOptionsPanel() {
     ])
   );
 
-  elmContainer.appendChild(
-    createSection('SponsorBlock', ['enableSponsorBlock'])
-  );
+  elmBody.appendChild(createSection('SponsorBlock', ['enableSponsorBlock']));
 
   const elmBlock = document.createElement('blockquote');
   for (const key of [
@@ -331,19 +426,36 @@ function createOptionsPanel() {
     elmBlock.appendChild(createConfigControl(key));
   }
 
-  elmContainer.appendChild(elmBlock);
+  elmBody.appendChild(elmBlock);
 
   const elmSponsorLink = document.createElement('small');
   elmSponsorLink.className = 'ytaf-ui-sponsor';
   elmSponsorLink.textContent =
     'Sponsor segments skipping - https://sponsor.ajay.app';
-  elmContainer.appendChild(elmSponsorLink);
+  elmBody.appendChild(elmSponsorLink);
+
+  elmBody.appendChild(createDiagnosticsSection());
+
+  const elmFooter = document.createElement('div');
+  elmFooter.className = 'ytaf-ui-footer';
+  elmContainer.appendChild(elmFooter);
+
+  const elmHelp = document.createElement('div');
+  elmHelp.className = 'ytaf-ui-help';
+  elmFooter.appendChild(elmHelp);
+  helpElement = elmHelp;
+
+  const elmKeys = document.createElement('div');
+  elmKeys.className = 'ytaf-ui-keys';
+  elmKeys.textContent =
+    '[GREEN] settings   [RED] speed   [YELLOW] SponsorBlock skip/highlight   [BLUE] audio only';
+  elmFooter.appendChild(elmKeys);
 
   const version = document.createElement('div');
   version.className = 'ytaf-ui-version';
   version.textContent = `v${__YTAF_VERSION__}`;
 
-  elmContainer.appendChild(version);
+  elmFooter.appendChild(version);
 
   return elmContainer;
 }

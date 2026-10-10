@@ -178,6 +178,62 @@ const configOptions = new Map([
   ]
 ]);
 
+/** Longer explanations, shown at the bottom of the panel on focus. */
+const optionHelp = {
+  enableAdBlock:
+    'Removes video ads, home screen ad tiles, shopping overlays and paid promotion banners.',
+  autoAccountSelect:
+    'Skips "Who is watching?" on startup and continues with the last used account.',
+  hideYouThere: 'Playback no longer pauses to ask whether you are still there.',
+  mutePreviews: 'Previews that play when a tile is focused start muted.',
+  defaultPlaybackSpeed:
+    'Applied to every video. While watching, [RED] steps through the speeds and remembers the choice.',
+  forceHighResVideo: 'Selects the highest available resolution on start.',
+  forceVp9Codec:
+    'Helps TVs that stall on AV1 streams. VP9 is reported as supported, so only enable it if your TV can decode VP9.',
+  forceOriginalAudio:
+    'Drops auto-dubbed audio tracks so videos play in their original language.',
+  disableAutoCaptions:
+    'YouTube may switch subtitles on when the audio language differs from yours. This stops that.',
+  removeEndscreen: 'Hides the video suggestions shown over the last seconds.',
+  enableLiveCatchup:
+    'Seeks live streams back to the live edge when they fall behind. Paused after you seek back manually.',
+  enableReturnDislike:
+    'Shows likes and dislikes (returnyoutubedislike.com) in the top-left corner while the controls are visible.',
+  removeShorts: 'Removes Shorts tiles and shelves from all pages.',
+  hideWatchedVideos:
+    'Hides videos that are at least 90% watched. The history page is not filtered.',
+  upgradeThumbnails: 'Loads higher resolution thumbnails.',
+  enableDeArrow:
+    'Replaces clickbait titles with community submissions (dearrow.ajay.app). New titles may only show after a page is reloaded.',
+  enableDeArrowThumbnails:
+    'Also replaces thumbnails with a frame from the video chosen by the community.',
+  hideLogo: 'Hides the YouTube logo in the top-right corner.',
+  showWatch: 'Shows the current time in the top-right corner.',
+  showWatchAlways: 'Keeps the clock visible while a video plays.',
+  oledTheme: 'Uses pure black backgrounds to save power on OLED screens.',
+  disableAnimations: 'Makes the UI snappier on slower TVs.',
+  enableSponsorBlock:
+    'Skip or mark sponsored and other segments (sponsor.ajay.app).',
+  enableSponsorBlockHighlight:
+    'If a video has a highlight, [YELLOW] jumps to it.',
+  enableSponsorBlockNotifications:
+    'Shows a short message when a segment is skipped.'
+};
+
+for (const [key, help] of Object.entries(optionHelp)) {
+  const option = configOptions.get(key);
+  if (option && !option.help) option.help = help;
+}
+
+const sponsorBlockModeHelp =
+  'Skip: automatic. Ask: [YELLOW] skips while the segment plays. Show only: marked on the progress bar.';
+for (const option of configOptions.values()) {
+  if (option.choices === SPONSORBLOCK_MODES && !option.help) {
+    option.help = sponsorBlockModeHelp;
+  }
+}
+
 const defaultConfig = (() => {
   let ret = {};
   for (const [k, v] of configOptions) {
@@ -229,6 +285,21 @@ export function configGetChoices(key) {
   }
 
   return configOptions.get(key).choices ?? null;
+}
+
+/**
+ * Returns the optional longer explanation of an option.
+ * @param {string} key
+ * @returns {string | null}
+ */
+export function configGetHelp(key) {
+  return configOptions.get(key)?.help ?? null;
+}
+
+/** Remove all stored settings. Takes full effect after a reload. */
+export function configResetAll() {
+  window.localStorage.removeItem(CONFIG_KEY);
+  localConfig = Object.create(defaultConfig);
 }
 
 export function configGetDesc(key) {
