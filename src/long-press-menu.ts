@@ -351,13 +351,11 @@ function walk(node: unknown, depth = 0) {
 
 addParseHandler('long-press-menu', (res) => {
   if (!configRead('enhancedLongPress')) return;
-  if (
-    !(
-      'contents' in res ||
-      'continuationContents' in res ||
-      'onResponseReceivedActions' in res
-    )
-  ) {
+  if (!(
+    'contents' in res ||
+    'continuationContents' in res ||
+    'onResponseReceivedActions' in res
+  )) {
     return;
   }
   walk(res);

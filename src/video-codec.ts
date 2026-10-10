@@ -69,9 +69,7 @@ addParseHandler('video-codec', (res) => {
   if (!codec && !height) return;
 
   const streamingData = res.streamingData as
-    | Record<string, unknown>
-    | null
-    | undefined;
+    Record<string, unknown> | null | undefined;
   if (typeof streamingData !== 'object' || streamingData === null) return;
 
   for (const key of ['formats', 'adaptiveFormats']) {

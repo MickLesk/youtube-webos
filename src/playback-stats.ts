@@ -17,8 +17,7 @@ type StatsForNerds = Record<string, unknown>;
 
 function nerdStats(): StatsForNerds | null {
   const player = document.querySelector('.html5-video-player') as
-    | (HTMLElement & { getStatsForNerds?: () => StatsForNerds })
-    | null;
+    (HTMLElement & { getStatsForNerds?: () => StatsForNerds }) | null;
   try {
     return player?.getStatsForNerds?.() ?? null;
   } catch {

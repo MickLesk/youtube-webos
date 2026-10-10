@@ -21,8 +21,7 @@ function readAll(): ChannelMap {
 /** Channel of the video that is currently loaded, if known. */
 export function currentChannel(): string | null {
   const player = document.querySelector('.html5-video-player') as
-    | (HTMLElement & { getVideoData?: () => { author?: string } })
-    | null;
+    (HTMLElement & { getVideoData?: () => { author?: string } }) | null;
   try {
     return player?.getVideoData?.().author?.trim() || null;
   } catch {
