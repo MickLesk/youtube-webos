@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.6] - 2026/10/10
+
+### Fixed
+
+- Continuing a video where you stopped no longer seeks the player itself: the position is handed to YouTube with the video, like a "t=" link, so the player cannot get stuck on the loading animation
+- Settings panel: measured and corrected until it fits the visible screen, also with a zoomed page; screen and panel sizes are shown on the Diagnostics page
+
 ## [0.9.5] - 2026/10/10
 
 ### Fixed

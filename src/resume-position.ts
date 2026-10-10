@@ -4,6 +4,7 @@
  * Only steps in when YouTube itself starts the video from the beginning.
  */
 import { configRead } from './config';
+import { addParseHandler } from './hooks/json-parse';
 import { t } from './i18n';
 import { getPlayerManager, PlayerMode } from './player_api';
 import { showNotification } from './ui';
@@ -90,56 +91,100 @@ function remember() {
   save(positions);
 }
 
-/** Give YouTube time to apply its own resume (watch history) first. */
-const RESUME_DELAY_MS = 2500;
-
-interface SeekablePlayer {
-  getCurrentTime?: () => number;
-  seekTo?: (seconds: number, allowSeekAhead?: boolean) => void;
+/**
+ * Resuming by seeking the <video> element while YouTube's player was still
+ * starting left the player loading forever on some TVs. The stored position
+ * is therefore handed to YouTube in the player response, the same way a
+ * "t=" link or the watch history resumes, and the player seeks itself.
+ */
+interface PlayerConfig {
+  playbackStartConfig?: { startSeconds?: unknown };
+  [key: string]: unknown;
 }
 
-/** Where YouTube's player is (or is about to be), not just the element. */
-function playerTime(video: HTMLVideoElement) {
-  const own = (player as unknown as SeekablePlayer).getCurrentTime?.();
-  return typeof own === 'number' && isFinite(own)
-    ? Math.max(own, video.currentTime)
-    : video.currentTime;
-}
+/** Videos whose start position YouTube itself takes care of. */
+const handledByYouTube: Record<string, true> = {};
 
-let resumeTimer: ReturnType<typeof setTimeout> | null = null;
+addParseHandler('resume-position', (res) => {
+  const details = res.videoDetails as { videoId?: unknown } | undefined;
+  const videoId = details?.videoId;
+  if (typeof videoId !== 'string' || !('streamingData' in res)) return;
 
-function resume(this: typeof playerManager) {
-  this.removeEventListener('playbackStart', resume);
+  const config = (res.playerConfig ?? {}) as PlayerConfig;
+  const start = config.playbackStartConfig?.startSeconds;
+  if (typeof start === 'number' && start > 0) {
+    // Watch history or a "t=" link: YouTube resumes on its own.
+    handledByYouTube[videoId] = true;
+    return;
+  }
+  delete handledByYouTube[videoId];
   if (!configRead('rememberPosition')) return;
 
+  const entry = load()[videoId];
+  const lengthSeconds = Number(
+    (details as { lengthSeconds?: unknown }).lengthSeconds
+  );
+  if (!entry || entry.t < EDGE_S) return;
+  if (lengthSeconds > 0 && entry.t > lengthSeconds - EDGE_S) return;
+  if (lengthSeconds > 0 && lengthSeconds < MIN_DURATION_S) return;
+
+  config.playbackStartConfig = {
+    ...config.playbackStartConfig,
+    startSeconds: entry.t
+  };
+  res.playerConfig = config;
+  handledByYouTube[videoId] = true;
+  pendingNotice = { videoId, time: entry.t };
+});
+
+let pendingNotice: { videoId: string; time: number } | null = null;
+
+/** Give the player time to settle before checking where it started. */
+const CHECK_DELAY_MS = 3000;
+let checkTimer: ReturnType<typeof setTimeout> | null = null;
+
+function onPlaybackStart(this: typeof playerManager) {
+  this.removeEventListener('playbackStart', onPlaybackStart);
   const videoId = this.currentVideoID;
-  if (resumeTimer) clearTimeout(resumeTimer);
-  // Seeking the element while YouTube seeks to its own resume point left
-  // the player loading forever, so wait and only step in when it didn't.
-  resumeTimer = setTimeout(() => {
-    resumeTimer = null;
+  if (!videoId) return;
+
+  const notice = pendingNotice;
+  pendingNotice = null;
+  if (notice && notice.videoId === videoId) {
+    showNotification(
+      t('msg.resumed', 'Continuing at {time}', {
+        time: formatTime(notice.time)
+      })
+    );
+  }
+  if (handledByYouTube[videoId] || !configRead('rememberPosition')) return;
+
+  // Fallback for responses that did not pass through JSON.parse: only once
+  // playback visibly runs from the start, never while the player is still
+  // seeking or buffering.
+  if (checkTimer) clearTimeout(checkTimer);
+  checkTimer = setTimeout(() => {
+    checkTimer = null;
     const video = getVideo();
-    if (!videoId || videoId !== playerManager.currentVideoID) return;
+    if (videoId !== playerManager.currentVideoID) return;
     if (!video || !isResumable(video) || video.seeking || video.paused) return;
-    if (playerTime(video) > START_TOLERANCE_S + RESUME_DELAY_MS / 1000) return;
+    if (video.readyState < 3 || video.currentTime < 0.5) return;
+    if (video.currentTime > START_TOLERANCE_S + CHECK_DELAY_MS / 1000) return;
 
     const entry = load()[videoId];
     if (!entry || entry.t > video.duration - EDGE_S) return;
-
-    const seekable = player as unknown as SeekablePlayer;
-    if (typeof seekable.seekTo === 'function') seekable.seekTo(entry.t, true);
-    else video.currentTime = entry.t;
+    video.currentTime = entry.t;
     showNotification(
       t('msg.resumed', 'Continuing at {time}', { time: formatTime(entry.t) })
     );
-  }, RESUME_DELAY_MS);
+  }, CHECK_DELAY_MS);
 }
 
 playerManager.addEventListener('newVideo', function () {
-  if (resumeTimer) clearTimeout(resumeTimer);
-  resumeTimer = null;
-  this.removeEventListener('playbackStart', resume);
-  this.addEventListener('playbackStart', resume);
+  if (checkTimer) clearTimeout(checkTimer);
+  checkTimer = null;
+  this.removeEventListener('playbackStart', onPlaybackStart);
+  this.addEventListener('playbackStart', onPlaybackStart);
 });
 
 setInterval(() => {

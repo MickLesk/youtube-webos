@@ -1399,9 +1399,7 @@ function createOptionsPanel() {
    * ended up taller than the screen), so measure and correct instead.
    */
   function fitToScreen() {
-    const root = document.documentElement;
-    const screenW = window.innerWidth || root.clientWidth;
-    const screenH = window.innerHeight || root.clientHeight;
+    const { screenW, screenH } = screenSize();
     const box = {
       left: screenW * 0.03,
       top: screenH * 0.04,
@@ -1409,7 +1407,10 @@ function createOptionsPanel() {
       height: screenH * 0.92
     };
     const style = elmContainer.style;
-    const apply = (left, top, scale) => {
+    let scale = 1;
+    let left = box.left;
+    let top = box.top;
+    const apply = () => {
       style.left = `${Math.round(left)}px`;
       style.top = `${Math.round(top)}px`;
       style.width = `${Math.round(box.width / scale)}px`;
@@ -1419,24 +1420,60 @@ function createOptionsPanel() {
     style.position = 'fixed';
     style.right = 'auto';
     style.bottom = 'auto';
-    apply(box.left, box.top, 1);
+    apply();
 
-    // A transformed ancestor moves or scales "fixed" boxes: correct once.
-    const rect = elmContainer.getBoundingClientRect();
-    const scale = rect.width / box.width;
-    if (
-      scale > 0 &&
-      (Math.abs(scale - 1) > 0.01 ||
+    // A zoomed or transformed ancestor moves or scales "fixed" boxes.
+    // Measure and correct until the box lands where it should.
+    for (let i = 0; i < 3; i++) {
+      const rect = elmContainer.getBoundingClientRect();
+      const off =
+        Math.abs(rect.width - box.width) > 1 ||
+        Math.abs(rect.height - box.height) > 1 ||
         Math.abs(rect.left - box.left) > 1 ||
-        Math.abs(rect.top - box.top) > 1)
-    ) {
-      apply(
-        box.left + (box.left - rect.left) / scale,
-        box.top + (box.top - rect.top) / scale,
-        scale
+        Math.abs(rect.top - box.top) > 1;
+      if (!off || rect.width <= 0 || rect.height <= 0) break;
+      const factor = Math.max(
+        rect.width / (box.width / scale),
+        rect.height / (box.height / scale)
       );
+      left += (box.left - rect.left) / factor;
+      top += (box.top - rect.top) / factor;
+      scale = factor;
+      apply();
     }
+    lastFit = { scale, left: Math.round(left), top: Math.round(top) };
   }
+
+  /** @type {{ scale: number, left: number, top: number } | null} */
+  let lastFit = null;
+
+  /** The smallest of the sizes the browser reports, so nothing overflows. */
+  function screenSize() {
+    const root = document.documentElement;
+    const widths = [window.innerWidth, root.clientWidth].filter((n) => n > 0);
+    const heights = [window.innerHeight, root.clientHeight].filter(
+      (n) => n > 0
+    );
+    return {
+      screenW: widths.length ? Math.min.apply(null, widths) : 1920,
+      screenH: heights.length ? Math.min.apply(null, heights) : 1080
+    };
+  }
+
+  addDiagnosticsLines(() => {
+    const root = document.documentElement;
+    const rect = elmContainer.getBoundingClientRect();
+    const round = (n) => Math.round(n);
+    return [
+      `Screen: window ${window.innerWidth}x${window.innerHeight}, ` +
+        `document ${root.clientWidth}x${root.clientHeight}, ` +
+        `display ${screen.width}x${screen.height}, ` +
+        `ratio ${window.devicePixelRatio || 1}, ` +
+        `zoom ${getComputedStyle(root).zoom || '-'}/${getComputedStyle(document.body).zoom || '-'}`,
+      `Panel: ${round(rect.left)},${round(rect.top)} ${round(rect.width)}x${round(rect.height)}` +
+        (lastFit ? `, scale ${lastFit.scale.toFixed(3)}` : '')
+    ];
+  });
 
   window.addEventListener('resize', () => {
     if (visible) fitToScreen();
