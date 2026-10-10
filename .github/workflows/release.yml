@@ -2,8 +2,6 @@ name: Build & Release
 
 on:
   push:
-    branches:
-      - '!*'
     tags:
       - 'v*.*'
 
@@ -17,19 +15,41 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-env
 
+      - name: Check tag matches package.json
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_NAME#v}" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+
+      - run: pnpm run lint:all
+      - run: pnpm test
       - run: pnpm run build
+      - run: pnpm run test:compat
       - run: pnpm run package
       - run: pnpm run manifest
 
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="${GITHUB_REF_NAME#v}" '
+            /^## \[/ { if (found) exit; found = index($0, "[" v "]") > 0; next }
+            found
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "No CHANGELOG.md entry for this version." > release-notes.md
+          fi
+          cat release-notes.md
+
+      # The update check in the app reads releases/latest, which skips
+      # prereleases: only tags like v1.2.3-beta become prereleases.
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          name: 'Release ${{ github.ref }}'
-          prerelease: true
+          name: ${{ github.ref_name }}
+          bodyFile: release-notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          makeLatest: ${{ !contains(github.ref_name, '-') }}
           draft: false
           allowUpdates: true
-          omitNameDuringUpdate: true
-          omitBodyDuringUpdate: true
-          omitDraftDuringUpdate: true
-          omitPrereleaseDuringUpdate: true
           artifacts: '*.ipk,*.manifest.json'
