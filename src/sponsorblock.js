@@ -104,6 +104,7 @@ class SponsorBlockHandler {
   segments = null;
   highlight = null;
   notifiedSegments = new Set();
+  skippedSegments = new Set();
 
   constructor(videoID) {
     this.videoID = videoID;
@@ -375,10 +376,17 @@ class SponsorBlockHandler {
         }
         // Read the settings at skip time so changes apply mid-video.
         const mode = getCategoryMode(segment.category);
+        const id = segment.UUID ?? `${start}-${end}`;
+
+        const minLength = Number(configRead('sponsorBlockMinLength')) || 0;
+        if (end - start < minLength) {
+          console.debug(this.videoID, 'Segment too short, ignoring', segment);
+          return;
+        }
+
         const skipName = segmentName(segment.category);
 
         if (mode === 'manual') {
-          const id = segment.UUID ?? `${start}-${end}`;
           if (!this.notifiedSegments.has(id)) {
             this.notifiedSegments.add(id);
             // Always shown: without it the viewer can't know to press.
@@ -403,6 +411,15 @@ class SponsorBlockHandler {
           );
           return;
         }
+
+        if (
+          configRead('sponsorBlockSkipOnce') &&
+          this.skippedSegments.has(id)
+        ) {
+          console.debug(this.videoID, 'Already skipped once', segment);
+          return;
+        }
+        this.skippedSegments.add(id);
 
         console.debug(this.videoID, 'Skipping', segment);
         notify(t('msg.skipping', 'Skipping {name}', { name: skipName }));
