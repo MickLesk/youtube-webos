@@ -1,18 +1,19 @@
 /*
  * Settings panel: header on top, sidebar on the left, options in the middle,
- * help column on the right. The panel font size is in rem like the rest of
- * YouTube's UI, everything inside is in em. Viewport units (vh) are avoided:
- * the webOS web runtime does not size them reliably.
+ * help column on the right. Position, size and font size of the panel are
+ * set in pixels from the screen size when it opens (fitToScreen in
+ * options-panel.js); everything inside is in em. The values here are only
+ * the fallback.
  *
  * Plain absolute positioning instead of flexbox: webOS 3 (Chrome 38) only
  * has an old flexbox implementation.
  */
 .ytaf-ui-container {
-  position: absolute;
-  top: 5%;
+  position: fixed;
+  top: 4%;
   left: 3%;
   right: 3%;
-  bottom: 5%;
+  bottom: 4%;
   z-index: 1000;
   overflow: hidden;
 

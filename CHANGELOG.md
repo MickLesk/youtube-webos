@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.4] - 2026/10/10
+
+### Fixed
+
+- Settings panel was larger than the screen on some TVs, so the lower options could not be scrolled into view: the panel now measures the screen when it opens
+
 ## [0.9.3] - 2026/10/10
 
 ### Fixed

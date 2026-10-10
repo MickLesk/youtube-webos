@@ -1393,10 +1393,64 @@ function createOptionsPanel() {
   window.addEventListener('keyup', onWindowKeyOther, true);
   document.addEventListener('focusin', onFocusIn, true);
 
+  /**
+   * Size the panel to the visible screen in pixels. CSS sizes depend on how
+   * YouTube sizes and scales the page, which differs between TVs (the panel
+   * ended up taller than the screen), so measure and correct instead.
+   */
+  function fitToScreen() {
+    const root = document.documentElement;
+    const screenW = window.innerWidth || root.clientWidth;
+    const screenH = window.innerHeight || root.clientHeight;
+    const box = {
+      left: screenW * 0.03,
+      top: screenH * 0.04,
+      width: screenW * 0.94,
+      height: screenH * 0.92
+    };
+    const style = elmContainer.style;
+    const apply = (left, top, scale) => {
+      style.left = `${Math.round(left)}px`;
+      style.top = `${Math.round(top)}px`;
+      style.width = `${Math.round(box.width / scale)}px`;
+      style.height = `${Math.round(box.height / scale)}px`;
+      style.fontSize = `${Math.max(12, Math.round((screenH * 0.024) / scale))}px`;
+    };
+    style.position = 'fixed';
+    style.right = 'auto';
+    style.bottom = 'auto';
+    apply(box.left, box.top, 1);
+
+    // A transformed ancestor moves or scales "fixed" boxes: correct once.
+    const rect = elmContainer.getBoundingClientRect();
+    const scale = rect.width / box.width;
+    if (
+      scale > 0 &&
+      (Math.abs(scale - 1) > 0.01 ||
+        Math.abs(rect.left - box.left) > 1 ||
+        Math.abs(rect.top - box.top) > 1)
+    ) {
+      apply(
+        box.left + (box.left - rect.left) / scale,
+        box.top + (box.top - rect.top) / scale,
+        scale
+      );
+    }
+  }
+
+  window.addEventListener('resize', () => {
+    if (visible) fitToScreen();
+  });
+
   function show() {
     if (visible) return;
     visible = true;
     elmContainer.style.display = 'block';
+    try {
+      fitToScreen();
+    } catch (err) {
+      logger.error('could not size the panel:', err);
+    }
     // A failing section must not leave an empty panel that swallows keys.
     try {
       refresh();
