@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.7.0] - 2026/10/10
+
+### Added
+
+- Quick menu during playback (speed, subtitles, audio-only, sleep timer, resolution, statistics, queue, picture-in-picture)
+- Per-channel playback speed and SponsorBlock on/off
+- Continue videos where you stopped, also without YouTube history
+- Number keys 0-9 jump to 0-90 % of the video
+- "Block channel" in the long-press menu
+- Subscriptions option that hides Shorts and watched videos there only
+- Emoji as images for older TVs ([#257](https://github.com/webosbrew/youtube-webos/pull/257))
+- Startup self-test and daily update check, shown on the Diagnostics page
+- "YouTube Extended" entry in YouTube's own settings; the settings panel keeps control of the remote keys
+
 ## [0.6.0] - 2026/10/10
 
 ### Added

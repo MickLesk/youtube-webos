@@ -56,6 +56,8 @@
 - Video queue, "Not interested" and "Don't recommend channel" in the long-press menu
 - Picture-in-picture while browsing (color button)
 - Live chat and chat replay next to the player (experimental)
+- Quick menu while watching, per-channel speed and SponsorBlock, resume position, number key seeking
+- Emoji images for older TVs, startup self-test and update check
 
 > [!NOTE]
 > Press the 🟩 **Green** button on your remote to access the configuration screen.
