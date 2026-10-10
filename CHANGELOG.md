@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.3] - 2026/10/10
+
+### Fixed
+
+- Settings panel, color buttons and most features did not start: the new settings icons used `innerHTML`, which YouTube blocks with Trusted Types. Icons are now built as DOM nodes, and a lint rule stops `innerHTML` from coming back
+
 ## [0.9.2] - 2026/10/10
 
 ### Changed

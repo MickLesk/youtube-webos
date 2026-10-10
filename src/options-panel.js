@@ -1047,17 +1047,44 @@ export function setKeyLegendProvider(provider) {
   keyLegendProvider = provider;
 }
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/**
+ * Builds an SVG element by element: YouTube enforces Trusted Types, so
+ * assigning markup to innerHTML throws.
+ * @param {string} viewBox
+ * @param {[string, Record<string, string>][]} shapes
+ */
+function createSvg(viewBox, shapes) {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', viewBox);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  for (const [tag, attrs] of shapes) {
+    const shape = document.createElementNS(SVG_NS, tag);
+    for (const name in attrs) shape.setAttribute(name, attrs[name]);
+    svg.appendChild(shape);
+  }
+  return svg;
+}
+
 /** @param {string} name */
 function createIcon(name) {
   const elmIcon = el('span', 'ytaf-ui-icon');
-  elmIcon.innerHTML = `<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="currentColor" d="${ICONS[name]}"/></svg>`;
+  elmIcon.appendChild(
+    createSvg('0 0 24 24', [['path', { fill: 'currentColor', d: ICONS[name] }]])
+  );
   return elmIcon;
 }
 
 function createLogo() {
   const elmLogo = el('span', 'ytaf-ui-logo');
-  elmLogo.innerHTML =
-    '<svg viewBox="0 0 28 20" width="100%" height="100%"><rect width="28" height="20" rx="5" fill="#ff0033"/><path d="M11 5.5v9l7.5-4.5z" fill="#fff"/></svg>';
+  elmLogo.appendChild(
+    createSvg('0 0 28 20', [
+      ['rect', { width: '28', height: '20', rx: '5', fill: '#ff0033' }],
+      ['path', { d: 'M11 5.5v9l7.5-4.5z', fill: '#fff' }]
+    ])
+  );
   return elmLogo;
 }
 

@@ -73,7 +73,21 @@ const configs = [
     }
   },
 
-  { files: ['src/**/*'], languageOptions: { globals: { ...globals.browser } } },
+  {
+    files: ['src/**/*'],
+    languageOptions: { globals: { ...globals.browser } },
+    rules: {
+      // YouTube enforces Trusted Types: these throw and stop the script.
+      'no-restricted-properties': [
+        'error',
+        ...['innerHTML', 'outerHTML', 'insertAdjacentHTML'].map((property) => ({
+          property,
+          message:
+            'Blocked by Trusted Types on YouTube; build DOM nodes instead.'
+        }))
+      ]
+    }
+  },
 
   {
     // Why doesn't ESLint do this by default is beyond me.
