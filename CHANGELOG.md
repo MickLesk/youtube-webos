@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.6.0] - 2026/10/10
+
+### Added
+
+- Settings panel organized in pages, with help texts, English/German translations, diagnostics log and reset
+- Remappable color buttons: playback speed, SponsorBlock, audio-only, next chapter, statistics, picture-in-picture, queue, live chat
+- SponsorBlock modes per category, highlight jump, minimum segment length
+- Feed filters: Shorts, watched, live, upcoming, members-only, channels, keywords, shelves, minimum length
+- DeArrow, Return YouTube Dislike, sleep timer, remaining time, playback statistics, chapters
+- Video codec and maximum resolution choice, original audio, subtitle language, seek step, scroll wheel seeking
+- Start page, sorted subscriptions, OLED theme, clock options, notification position and duration
+- Video queue and "Not interested" / "Don't recommend channel" in the long-press menu
+- Picture-in-picture while browsing
+- Live chat and chat replay (experimental)
+
+### Changed
+
+- App version is offset by 100 so the LG Content Store no longer replaces the app
+
 ## [0.5.3] - 2026/04/18
 
 ### Fixed
