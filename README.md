@@ -53,6 +53,9 @@
 - Black screen in audio-only mode, option to disable previews
 - Sorted subscriptions channel list
 - Version offset that stops the LG Content Store from replacing the app
+- Video queue, "Not interested" and "Don't recommend channel" in the long-press menu
+- Picture-in-picture while browsing (color button)
+- Live chat and chat replay next to the player (experimental)
 
 > [!NOTE]
 > Press the 🟩 **Green** button on your remote to access the configuration screen.

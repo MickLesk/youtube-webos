@@ -28,7 +28,10 @@ const BUTTON_ACTIONS = [
   { value: 'sponsorblock', label: 'SponsorBlock skip/highlight' },
   { value: 'audioOnly', label: 'Audio-only mode' },
   { value: 'nextChapter', label: 'Next chapter' },
-  { value: 'stats', label: 'Toggle playback statistics' }
+  { value: 'stats', label: 'Toggle playback statistics' },
+  { value: 'pip', label: 'Picture-in-picture' },
+  { value: 'queueNext', label: 'Play next in queue' },
+  { value: 'liveChat', label: 'Show/hide live chat' }
 ];
 
 const configOptions = new Map([
@@ -380,7 +383,12 @@ const configOptions = new Map([
   [
     'autoAccountSelect',
     { default: false, desc: 'Bypass initial account selection on startup' }
-  ]
+  ],
+  [
+    'enhancedLongPress',
+    { default: true, desc: 'Extended long-press menu (queue, not interested)' }
+  ],
+  ['enableLiveChat', { default: false, desc: 'Show live chat (experimental)' }]
 ]);
 
 /** Longer explanations, shown at the bottom of the panel on focus. */
@@ -414,6 +422,10 @@ const optionHelp = {
   disableAutoCaptions:
     'YouTube may switch subtitles on when the audio language differs from yours. This stops that.',
   removeEndscreen: 'Hides the video suggestions shown over the last seconds.',
+  enhancedLongPress:
+    'Hold OK on a video for "Add to queue", "Not interested" and "Don\'t recommend channel". Queued videos play after the current one.',
+  enableLiveChat:
+    'Shows the chat of live streams and the chat replay of past streams next to the player. Can be toggled with a color button.',
   enableLiveCatchup:
     'Seeks live streams back to the live edge when they fall behind. Paused after you seek back manually.',
   enableReturnDislike:

@@ -283,3 +283,35 @@ body.ytaf-audio-only video {
   background: #000;
   z-index: 2000;
 }
+
+/* Live chat next to the player. */
+.ytaf-live-chat {
+  position: fixed;
+  right: 2rem;
+  top: 6rem;
+  width: 24rem;
+  max-height: 60vh;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.55);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  color: white;
+  z-index: 1050;
+  pointer-events: none;
+}
+
+.ytaf-live-chat-line {
+  margin: 0.15rem 0;
+  word-wrap: break-word;
+}
+
+.ytaf-live-chat-author {
+  color: #aaa;
+  font-weight: bold;
+}
+
+.ytaf-live-chat-paid .ytaf-live-chat-author {
+  color: #ffca28;
+}

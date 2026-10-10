@@ -65,6 +65,9 @@ const de: Record<string, string> = {
   'opt.removeEndscreen': 'Endcards am Videoende entfernen',
   'opt.mutePreviews': 'Vorschauvideos stummschalten',
   'opt.enableLiveCatchup': 'Live-Verzögerung verringern (zur Live-Kante)',
+  'opt.enhancedLongPress':
+    'Erweitertes Langdruck-Menü (Warteschlange, Kein Interesse)',
+  'opt.enableLiveChat': 'Live-Chat anzeigen (experimentell)',
   'opt.autoAccountSelect': 'Kontoauswahl beim Start überspringen',
   'opt.subtitleLanguage': 'Untertitel',
   'opt.enableScrollSeek': 'Mit dem Scrollrad der Magic Remote spulen',
@@ -110,6 +113,10 @@ const de: Record<string, string> = {
     'Blendet die Videovorschläge in den letzten Sekunden aus.',
   'help.enableLiveCatchup':
     'Springt bei Livestreams zurück zur Live-Kante, wenn sie zurückfallen. Pausiert nach manuellem Zurückspulen.',
+  'help.enhancedLongPress':
+    'OK auf einem Video gedrückt halten für „Zur Warteschlange hinzufügen“, „Kein Interesse“ und „Kanal nicht empfehlen“. Videos in der Warteschlange laufen nach dem aktuellen.',
+  'help.enableLiveChat':
+    'Zeigt den Chat von Livestreams und die Chat-Wiedergabe vergangener Streams neben dem Player. Mit einer Farbtaste ein- und ausblendbar.',
   'help.enableReturnDislike':
     'Zeigt Likes und Dislikes (returnyoutubedislike.com) oben links, solange die Steuerelemente sichtbar sind.',
   'help.removeShorts': 'Entfernt Shorts-Kacheln und -Regale auf allen Seiten.',
@@ -201,6 +208,9 @@ const de: Record<string, string> = {
   'choice.Audio-only mode': 'Nur-Audio-Modus',
   'choice.Next chapter': 'Nächstes Kapitel',
   'choice.Toggle playback statistics': 'Statistik ein/aus',
+  'choice.Picture-in-picture': 'Bild-in-Bild',
+  'choice.Play next in queue': 'Nächstes aus der Warteschlange',
+  'choice.Show/hide live chat': 'Live-Chat ein/aus',
 
   // Panel
   'ui.General': 'Allgemein',
@@ -225,6 +235,13 @@ const de: Record<string, string> = {
   'ui.reset': 'Alle Einstellungen zurücksetzen',
   'ui.resetConfirm': 'Zum Zurücksetzen erneut OK drücken',
   'ui.keyGreen': 'Einstellungen',
+  'ui.addToQueue': 'Zur Warteschlange hinzufügen',
+  'ui.notInterested': 'Kein Interesse',
+  'ui.dontRecommendChannel': 'Kanal nicht empfehlen',
+  'ui.play': 'Abspielen',
+  'ui.saveWatchLater': 'Zu „Später ansehen“ hinzufügen',
+  'ui.removeWatchLater': 'Aus „Später ansehen“ entfernen',
+  'ui.saveToPlaylist': 'In Playlist speichern',
 
   // Notifications
   'msg.openSettings': '[GRÜN] drücken, um die Einstellungen zu öffnen',
@@ -246,6 +263,15 @@ const de: Record<string, string> = {
     'Aktualisiert auf v{version} – neue Optionen in den Einstellungen (grüne Taste)',
   'msg.noChapter': 'Kein weiteres Kapitel',
   'msg.nextChapter': 'Nächstes Kapitel',
+  'msg.queueAdded': 'Zur Warteschlange hinzugefügt ({count}): {title}',
+  'msg.queueDuplicate': 'Schon in der Warteschlange',
+  'msg.queueCleared': 'Warteschlange geleert',
+  'msg.queuePlaying': 'Als Nächstes: {title} (noch {count})',
+  'msg.queueEmpty': 'Die Warteschlange ist leer',
+  'msg.feedbackSent': 'Danke, YouTube zeigt weniger solche Videos',
+  'msg.feedbackFailed': 'Feedback nicht verfügbar',
+  'msg.pipUnavailable': 'Bild-in-Bild ist nicht verfügbar',
+  'msg.noLiveChat': 'Kein Chat für dieses Video',
 
   // SponsorBlock segment names used in notifications
   'segment.sponsor': 'Sponsor',

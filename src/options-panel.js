@@ -353,7 +353,8 @@ const PAGES = [
         'startPage',
         'hideYouThere',
         'hideNags',
-        'mutePreviews'
+        'mutePreviews',
+        'enhancedLongPress'
       ])
   },
   {
@@ -375,6 +376,7 @@ const PAGES = [
         'audioOnlyDim',
         'removeEndscreen',
         'enableLiveCatchup',
+        'enableLiveChat',
         'enableReturnDislike'
       ])
   },

@@ -74,7 +74,10 @@ const ACTION_LABELS = {
   sponsorblock: 'SponsorBlock skip/highlight',
   audioOnly: 'Audio-only mode',
   nextChapter: 'Next chapter',
-  stats: 'Toggle playback statistics'
+  stats: 'Toggle playback statistics',
+  pip: 'Picture-in-picture',
+  queueNext: 'Play next in queue',
+  liveChat: 'Show/hide live chat'
 };
 
 setKeyLegendProvider(() => {
