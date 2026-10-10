@@ -34,8 +34,8 @@
 - Live stream catch-up (skip to live edge)
 - Video codec choice (VP9 / AVC / AV1) and maximum resolution
 - Mute video previews
-- Default playback speed (🟥 Red button cycles speeds while watching)
-- SponsorBlock modes per category (Skip / Ask / Show only / Off), jump to highlight (🟨 Yellow button)
+- Default playback speed, cycled with a color button while watching
+- SponsorBlock modes per category (Skip / Ask / Show only / Off) and jump to highlight
 - No more "Are you still watching?" prompts
 - Shorts removal everywhere, hide watched videos, block channels
 - [Return YouTube Dislike](https://returnyoutubedislike.com/) and [DeArrow](https://dearrow.ajay.app/)
@@ -45,6 +45,9 @@
 - Hide live streams, premieres, members-only videos and sign-in/Premium nags
 - Choose the start page (Home, Subscriptions, Library, History)
 - On-screen diagnostics log and settings reset
+- Settings in English and German, organized in pages
+- Remappable color buttons (speed, SponsorBlock, audio-only)
+- Hide videos by title keyword, shelves by title and videos below a minimum length
 - Version offset that stops the LG Content Store from replacing the app
 
 > [!NOTE]
