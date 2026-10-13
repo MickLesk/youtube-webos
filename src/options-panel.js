@@ -1001,16 +1001,39 @@ function buildPage(page) {
 function scrollIntoContainer(container, elm) {
   if (!(elm instanceof HTMLElement) || !container.contains(elm)) return;
 
-  const containerRect = container.getBoundingClientRect();
+  const rect = container.getBoundingClientRect();
   const elmRect = elm.getBoundingClientRect();
+  // Only the part of the list that is on screen counts, so the focused row
+  // stays visible even if the panel is taller than the screen.
+  const screenH =
+    Math.min(
+      window.innerHeight || Infinity,
+      document.documentElement.clientHeight || Infinity
+    ) || rect.bottom;
+  const top = Math.max(rect.top, 0);
+  const bottom = Math.min(rect.bottom, screenH);
   // Keep a bit of the neighbours (and group headings) in view.
-  const margin = Math.min(elmRect.height * 1.5, containerRect.height / 4);
+  const margin = Math.min(elmRect.height * 1.5, (bottom - top) / 4);
 
-  if (elmRect.top - margin < containerRect.top) {
-    container.scrollTop -= containerRect.top - elmRect.top + margin;
-  } else if (elmRect.bottom + margin > containerRect.bottom) {
-    container.scrollTop += elmRect.bottom - containerRect.bottom + margin;
+  if (elmRect.top - margin < top) {
+    container.scrollTop -= top - elmRect.top + margin;
+  } else if (elmRect.bottom + margin > bottom) {
+    container.scrollTop += elmRect.bottom - bottom + margin;
   }
+}
+
+/**
+ * CSS `zoom` of the ancestors, which scales fixed boxes too. Older Chrome
+ * does not fold it into getBoundingClientRect, so it is read directly.
+ * @param {HTMLElement} elm
+ */
+function ancestorZoom(elm) {
+  let zoom = 1;
+  for (let node = elm.parentElement; node; node = node.parentElement) {
+    const value = parseFloat(getComputedStyle(node).zoom);
+    if (value > 0 && value !== 1) zoom *= value;
+  }
+  return zoom;
 }
 
 /**
@@ -1407,9 +1430,10 @@ function createOptionsPanel() {
       height: screenH * 0.92
     };
     const style = elmContainer.style;
-    let scale = 1;
-    let left = box.left;
-    let top = box.top;
+    const zoom = ancestorZoom(elmContainer);
+    let scale = zoom;
+    let left = box.left / zoom;
+    let top = box.top / zoom;
     const apply = () => {
       style.left = `${Math.round(left)}px`;
       style.top = `${Math.round(top)}px`;
@@ -1422,9 +1446,11 @@ function createOptionsPanel() {
     style.bottom = 'auto';
     apply();
 
-    // A zoomed or transformed ancestor moves or scales "fixed" boxes.
-    // Measure and correct until the box lands where it should.
-    for (let i = 0; i < 3; i++) {
+    // A transformed ancestor moves or scales "fixed" boxes. Measure and
+    // correct until the box lands where it should. With `zoom` in play the
+    // measurement is not comparable across browsers, so trust the zoom.
+    const rounds = zoom === 1 ? 3 : 0;
+    for (let i = 0; i < rounds; i++) {
       const rect = elmContainer.getBoundingClientRect();
       const off =
         Math.abs(rect.width - box.width) > 1 ||
@@ -1441,10 +1467,10 @@ function createOptionsPanel() {
       scale = factor;
       apply();
     }
-    lastFit = { scale, left: Math.round(left), top: Math.round(top) };
+    lastFit = { scale, zoom, left: Math.round(left), top: Math.round(top) };
   }
 
-  /** @type {{ scale: number, left: number, top: number } | null} */
+  /** @type {{ scale: number, zoom: number, left: number, top: number } | null} */
   let lastFit = null;
 
   /** The smallest of the sizes the browser reports, so nothing overflows. */
@@ -1471,7 +1497,9 @@ function createOptionsPanel() {
         `ratio ${window.devicePixelRatio || 1}, ` +
         `zoom ${getComputedStyle(root).zoom || '-'}/${getComputedStyle(document.body).zoom || '-'}`,
       `Panel: ${round(rect.left)},${round(rect.top)} ${round(rect.width)}x${round(rect.height)}` +
-        (lastFit ? `, scale ${lastFit.scale.toFixed(3)}` : '')
+        (lastFit
+          ? `, scale ${lastFit.scale.toFixed(3)}, zoom ${lastFit.zoom}`
+          : '')
     ];
   });
 

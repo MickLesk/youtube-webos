@@ -16,8 +16,6 @@ const SAVE_INTERVAL_MS = 10000;
 const MIN_DURATION_S = 5 * 60;
 /** Near the start or end counts as "not started" or "finished". */
 const EDGE_S = 30;
-/** YouTube resumed by itself if playback starts later than this. */
-const START_TOLERANCE_S = 5;
 
 interface Entry {
   t: number;
@@ -139,50 +137,24 @@ addParseHandler('resume-position', (res) => {
 
 let pendingNotice: { videoId: string; time: number } | null = null;
 
-/** Give the player time to settle before checking where it started. */
-const CHECK_DELAY_MS = 3000;
-let checkTimer: ReturnType<typeof setTimeout> | null = null;
-
+/**
+ * Only the notice is shown here. The video element is never seeked by this
+ * module: the stored position reaches the player through the response
+ * above, and YouTube's own start position always wins.
+ */
 function onPlaybackStart(this: typeof playerManager) {
   this.removeEventListener('playbackStart', onPlaybackStart);
   const videoId = this.currentVideoID;
-  if (!videoId) return;
-
   const notice = pendingNotice;
   pendingNotice = null;
-  if (notice && notice.videoId === videoId) {
-    showNotification(
-      t('msg.resumed', 'Continuing at {time}', {
-        time: formatTime(notice.time)
-      })
-    );
-  }
-  if (handledByYouTube[videoId] || !configRead('rememberPosition')) return;
-
-  // Fallback for responses that did not pass through JSON.parse: only once
-  // playback visibly runs from the start, never while the player is still
-  // seeking or buffering.
-  if (checkTimer) clearTimeout(checkTimer);
-  checkTimer = setTimeout(() => {
-    checkTimer = null;
-    const video = getVideo();
-    if (videoId !== playerManager.currentVideoID) return;
-    if (!video || !isResumable(video) || video.seeking || video.paused) return;
-    if (video.readyState < 3 || video.currentTime < 0.5) return;
-    if (video.currentTime > START_TOLERANCE_S + CHECK_DELAY_MS / 1000) return;
-
-    const entry = load()[videoId];
-    if (!entry || entry.t > video.duration - EDGE_S) return;
-    video.currentTime = entry.t;
-    showNotification(
-      t('msg.resumed', 'Continuing at {time}', { time: formatTime(entry.t) })
-    );
-  }, CHECK_DELAY_MS);
+  if (!videoId || !notice || notice.videoId !== videoId) return;
+  if (handledByYouTube[videoId] !== true) return;
+  showNotification(
+    t('msg.resumed', 'Continuing at {time}', { time: formatTime(notice.time) })
+  );
 }
 
 playerManager.addEventListener('newVideo', function () {
-  if (checkTimer) clearTimeout(checkTimer);
-  checkTimer = null;
   this.removeEventListener('playbackStart', onPlaybackStart);
   this.addEventListener('playbackStart', onPlaybackStart);
 });

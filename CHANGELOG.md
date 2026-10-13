@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.7] - 2026/10/13
+
+### Fixed
+
+- Continuing where you stopped never touches the video element anymore; the stored position only reaches the player through YouTube's own start position
+- Settings panel: CSS zoom of the page is applied directly, since older TV browsers do not report it when measuring, and the focused row is kept inside the part of the panel that is on screen
+
 ## [0.9.6] - 2026/10/10
 
 ### Fixed
