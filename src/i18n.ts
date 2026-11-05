@@ -47,6 +47,7 @@ const de: Record<string, string> = {
   'opt.forceOriginalAudio': 'Originalton statt Synchronisation',
   'opt.disableAutoCaptions': 'Untertitel nicht automatisch einschalten',
   'opt.enableReturnDislike': 'Dislikes anzeigen',
+  'opt.panelSize': 'Größe des Einstellungsmenüs',
   'opt.hideLogo': 'YouTube-Logo ausblenden',
   'opt.showWatch': 'Uhrzeit anzeigen',
   'opt.clockFormat': 'Uhrzeitformat',
@@ -139,6 +140,8 @@ const de: Record<string, string> = {
     'Ersetzt Clickbait-Titel durch Vorschläge der Community (dearrow.ajay.app). Neue Titel erscheinen teils erst nach erneutem Laden einer Seite.',
   'help.enableDeArrowThumbnails':
     'Ersetzt zusätzlich Thumbnails durch ein von der Community gewähltes Standbild.',
+  'help.panelSize':
+    'Wie viel vom Bildschirm dieses Menü einnimmt. Wähle eine kleinere Größe, wenn dein Fernseher die Bildränder abschneidet.',
   'help.hideLogo': 'Blendet das YouTube-Logo oben rechts aus.',
   'help.showWatch': 'Zeigt die Uhrzeit oben rechts.',
   'help.showWatchAlways': 'Die Uhr bleibt während der Wiedergabe sichtbar.',
@@ -398,6 +401,7 @@ const de: Record<string, string> = {
     'Fügt oben auf der Startseite eine Reihe mit den neuesten Videos deiner Abos ein. Sie wird alle 15 Minuten im Hintergrund aktualisiert.',
   'choice.Small': 'Klein',
   'choice.Large': 'Groß',
+  'choice.Medium': 'Mittel',
   'choice.Extra large': 'Sehr groß',
   'choice.None (outlined text)': 'Keiner (Umriss)',
   'choice.Semi-transparent': 'Halbtransparent',

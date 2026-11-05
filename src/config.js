@@ -280,6 +280,18 @@ const configOptions = new Map([
   ],
   ['audioOnlyDim', { default: false, desc: 'Black screen in audio-only mode' }],
   ['enableReturnDislike', { default: false, desc: 'Show dislike count' }],
+  [
+    'panelSize',
+    {
+      default: 'medium',
+      desc: 'Settings menu size',
+      choices: [
+        { value: 'large', label: 'Large' },
+        { value: 'medium', label: 'Medium' },
+        { value: 'small', label: 'Small' }
+      ]
+    }
+  ],
   ['hideLogo', { default: false, desc: 'Hide YouTube logo' }],
   ['showWatch', { default: false, desc: 'Display time in UI' }],
   [
@@ -556,6 +568,8 @@ const optionHelp = {
   sponsorBlockMinLength: 'Very short segments are neither skipped nor offered.',
   sponsorBlockSkipOnce:
     'After seeking back into a skipped segment it plays normally.',
+  panelSize:
+    'How much of the screen this menu takes up. Pick a smaller size if your TV cuts off the edges of the picture.',
   hideLogo: 'Hides the YouTube logo in the top-right corner.',
   showWatch: 'Shows the current time in the top-right corner.',
   showWatchAlways: 'Keeps the clock visible while a video plays.',

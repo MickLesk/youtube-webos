@@ -28,20 +28,48 @@ function notifyPlaybackQuality(this: PlayerManager) {
   this.removeEventListener('playbackStart', notifyPlaybackQuality);
 }
 
+/**
+ * Run `cb` once the video is really playing: ready to play through and the
+ * time has advanced. Changing the quality while the player is still
+ * starting (or taking over an inline preview) left some TVs on the
+ * loading animation.
+ */
+function whenPlaying(player: PlayerManager['player'], cb: () => void) {
+  const video = player.querySelector('video');
+  const start = video ? video.currentTime : 0;
+  const started = Date.now();
+  const token = window.setInterval(() => {
+    const progressed =
+      !video || (video.readyState >= 3 && video.currentTime > start + 0.5);
+    if (progressed || Date.now() - started > 8000) {
+      clearInterval(token);
+      cb();
+    }
+  }, 250);
+}
+
 function setPlaybackQuality(this: PlayerManager, _: unknown) {
   if (this.playerMode === PlayerMode.PREVIEW) return;
 
-  console.debug('[video-quality] setting playback quality');
   this.removeEventListener('playbackStart', setPlaybackQuality);
+  whenPlaying(this.player, () => applyPlaybackQuality.call(this));
+}
+
+function applyPlaybackQuality(this: PlayerManager) {
+  if (!shouldForce() || this.playerMode === PlayerMode.PREVIEW) return;
 
   const prevQuality = this.player.getPlaybackQualityLabel();
-  // Formats above the resolution cap are already removed from the response.
-  this.player.setPlaybackQualityRange('highres', 'highres');
+  const max = getMaxQualityLabel(this.player);
 
-  if (prevQuality === getMaxQualityLabel(this.player)) {
+  // Already at the best quality: leave the player alone.
+  if (!max || prevQuality === max) {
     notifyPlaybackQuality.call(this);
     return;
   }
+
+  console.debug('[video-quality] setting playback quality');
+  // Formats above the resolution cap are already removed from the response.
+  this.player.setPlaybackQualityRange('highres', 'highres');
 
   let timeoutToken: number | undefined;
 

@@ -71,6 +71,7 @@ const SEEN_KEY = 'ytaf-seen-options';
  * marked as new once for people updating from an older version.
  */
 const RECENT_OPTIONS = [
+  'panelSize',
   'subtitleAutoTranslate',
   'subtitleSize',
   'subtitleBackground',
@@ -919,7 +920,10 @@ const PAGES = [
         ['showWatch', 'showWatchAlways', 'clockFormat', 'clockShowDate']
       ],
       ['Notifications', ['notificationPosition', 'notificationDuration']],
-      ['Interface', ['hideLogo', 'oledTheme', 'twemoji', 'disableAnimations']]
+      [
+        'Interface',
+        ['panelSize', 'hideLogo', 'oledTheme', 'twemoji', 'disableAnimations']
+      ]
     ]
   },
   {
@@ -979,6 +983,9 @@ function pageKeys(page) {
   return keys;
 }
 
+/** Share of the screen each `panelSize` takes up. */
+const PANEL_SIZES = { large: 1, medium: 0.8, small: 0.65 };
+
 /** @param {Page} page */
 function buildPage(page) {
   const elmPage = el('div', 'ytaf-ui-page');
@@ -993,33 +1000,35 @@ function buildPage(page) {
 /* -------------------------------- Panel -------------------------------- */
 
 /**
- * Scroll `container` so that `elm` is fully visible. Done manually because
- * scrollIntoView options are not supported on older webOS versions.
+ * Scroll `container` so that `elm` sits in its upper part. The list moves
+ * along with the focus, like the rest of the TV interface, so the focused
+ * row is readable even when the TV shows only part of the panel. Uses
+ * layout offsets instead of getBoundingClientRect, which older Chrome
+ * reports wrongly on zoomed pages. Done manually because scrollIntoView
+ * options are not supported on older webOS versions.
  * @param {HTMLElement} container
  * @param {EventTarget | null} elm
  */
 function scrollIntoContainer(container, elm) {
   if (!(elm instanceof HTMLElement) || !container.contains(elm)) return;
 
-  const rect = container.getBoundingClientRect();
-  const elmRect = elm.getBoundingClientRect();
-  // Only the part of the list that is on screen counts, so the focused row
-  // stays visible even if the panel is taller than the screen.
-  const screenH =
-    Math.min(
-      window.innerHeight || Infinity,
-      document.documentElement.clientHeight || Infinity
-    ) || rect.bottom;
-  const top = Math.max(rect.top, 0);
-  const bottom = Math.min(rect.bottom, screenH);
-  // Keep a bit of the neighbours (and group headings) in view.
-  const margin = Math.min(elmRect.height * 1.5, (bottom - top) / 4);
-
-  if (elmRect.top - margin < top) {
-    container.scrollTop -= top - elmRect.top + margin;
-  } else if (elmRect.bottom + margin > bottom) {
-    container.scrollTop += elmRect.bottom - bottom + margin;
+  let top = 0;
+  for (
+    let node = elm;
+    node && node !== container;
+    node = /** @type {HTMLElement | null} */ (node.offsetParent)
+  ) {
+    top += node.offsetTop;
   }
+  const height = elm.offsetHeight;
+  const viewH = container.clientHeight;
+  if (!(viewH > 0)) return;
+
+  // Rows near the top stay put; from then on the focus is kept at about a
+  // third of the visible height.
+  const anchor = viewH * 0.3;
+  const target = Math.max(0, Math.round(top + height / 2 - anchor));
+  if (Math.abs(container.scrollTop - target) > 1) container.scrollTop = target;
 }
 
 /**
@@ -1423,11 +1432,14 @@ function createOptionsPanel() {
    */
   function fitToScreen() {
     const { screenW, screenH } = screenSize();
+    // Smaller sizes stay anchored at the top left: TVs that cut off the
+    // picture cut off its right and bottom edges.
+    const size = PANEL_SIZES[configRead('panelSize')] ?? 1;
     const box = {
       left: screenW * 0.03,
       top: screenH * 0.04,
-      width: screenW * 0.94,
-      height: screenH * 0.92
+      width: screenW * 0.94 * size,
+      height: screenH * 0.92 * size
     };
     const style = elmContainer.style;
     const zoom = ancestorZoom(elmContainer);
@@ -1439,7 +1451,7 @@ function createOptionsPanel() {
       style.top = `${Math.round(top)}px`;
       style.width = `${Math.round(box.width / scale)}px`;
       style.height = `${Math.round(box.height / scale)}px`;
-      style.fontSize = `${Math.max(12, Math.round((screenH * 0.024) / scale))}px`;
+      style.fontSize = `${Math.max(12, Math.round((box.height * 0.026) / scale))}px`;
     };
     style.position = 'fixed';
     style.right = 'auto';
@@ -1468,7 +1480,18 @@ function createOptionsPanel() {
       apply();
     }
     lastFit = { scale, zoom, left: Math.round(left), top: Math.round(top) };
+
+    // Room below the last rows, so they too can be scrolled up into view.
+    const pad = `${Math.round(elmBody.clientHeight * 0.7)}px`;
+    pages.forEach((elmPage) => {
+      elmPage.style.paddingBottom = pad;
+    });
+    scrollIntoContainer(elmBody, document.activeElement);
   }
+
+  configAddChangeListener('panelSize', () => {
+    if (visible) fitToScreen();
+  });
 
   /** @type {{ scale: number, zoom: number, left: number, top: number } | null} */
   let lastFit = null;
@@ -1498,7 +1521,7 @@ function createOptionsPanel() {
         `zoom ${getComputedStyle(root).zoom || '-'}/${getComputedStyle(document.body).zoom || '-'}`,
       `Panel: ${round(rect.left)},${round(rect.top)} ${round(rect.width)}x${round(rect.height)}` +
         (lastFit
-          ? `, scale ${lastFit.scale.toFixed(3)}, zoom ${lastFit.zoom}`
+          ? `, scale ${lastFit.scale.toFixed(3)}, zoom ${lastFit.zoom}, size ${configRead('panelSize')}`
           : '')
     ];
   });

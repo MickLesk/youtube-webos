@@ -117,6 +117,11 @@ addParseHandler('resume-position', (res) => {
   }
   delete handledByYouTube[videoId];
   if (!configRead('rememberPosition')) return;
+  // The response of an inline preview on the start page must start where
+  // YouTube wants it: a preview that begins in the middle and is then
+  // opened as a video left the player loading forever. Those videos are
+  // resumed by resumeLate() once they really play.
+  if (player.isInline() || !isWatchPage()) return;
 
   const entry = load()[videoId];
   const lengthSeconds = Number(
@@ -143,15 +148,67 @@ let pendingNotice: { videoId: string; time: number } | null = null;
  * above, and YouTube's own start position always wins.
  */
 function onPlaybackStart(this: typeof playerManager) {
+  if (this.playerMode !== PlayerMode.NORMAL) return;
   this.removeEventListener('playbackStart', onPlaybackStart);
   const videoId = this.currentVideoID;
   const notice = pendingNotice;
   pendingNotice = null;
-  if (!videoId || !notice || notice.videoId !== videoId) return;
-  if (handledByYouTube[videoId] !== true) return;
+  if (!videoId) return;
+  if (notice && notice.videoId === videoId && handledByYouTube[videoId]) {
+    notify(notice.time);
+    return;
+  }
+  if (handledByYouTube[videoId]) return;
+  resumeLate(videoId);
+}
+
+function notify(time: number) {
   showNotification(
-    t('msg.resumed', 'Continuing at {time}', { time: formatTime(notice.time) })
+    t('msg.resumed', 'Continuing at {time}', { time: formatTime(time) })
   );
+}
+
+function isWatchPage() {
+  return document.body.classList.contains('WEB_PAGE_TYPE_WATCH');
+}
+
+/** Videos already handled by resumeLate(), so a pause/play does not repeat it. */
+const resumedLate: Record<string, true> = {};
+
+/**
+ * Fallback for videos whose response could not carry the position (opened
+ * from a preview, or fetched before the watch page was shown). Waits until
+ * the video really plays and then jumps, like a seek with the remote; the
+ * seek is skipped if YouTube already started past the beginning.
+ */
+function resumeLate(videoId: string) {
+  if (!configRead('rememberPosition') || resumedLate[videoId]) return;
+  const entry = load()[videoId];
+  if (!entry || entry.t < EDGE_S) return;
+  resumedLate[videoId] = true;
+
+  const started = Date.now();
+  const video = getVideo();
+  const initial = video ? video.currentTime : 0;
+  const token = window.setInterval(() => {
+    const current = getVideo();
+    if (
+      !current ||
+      playerManager.currentVideoID !== videoId ||
+      Date.now() - started > 15000
+    ) {
+      clearInterval(token);
+      return;
+    }
+    const progressed =
+      current.readyState >= 3 && current.currentTime > initial + 1;
+    if (!progressed) return;
+    clearInterval(token);
+    if (!isResumable(current) || current.currentTime >= EDGE_S) return;
+    if (entry.t > current.duration - EDGE_S) return;
+    current.currentTime = entry.t;
+    notify(entry.t);
+  }, 250);
 }
 
 playerManager.addEventListener('newVideo', function () {
