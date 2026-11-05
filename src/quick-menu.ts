@@ -8,6 +8,7 @@ import { t } from './i18n';
 import { getPlayerManager, PlayerMode } from './player_api';
 import { getQueueLength } from './video-queue';
 import { zoomLabel } from './video-picture';
+import { bookmarkCount } from './bookmarks';
 import { runColorAction, setColorActionHandler } from './ui';
 import { isWatchPage, onPageChange } from './page-state';
 
@@ -108,6 +109,18 @@ const ITEMS: Item[] = [
   {
     label: () => t('quick.zoom', 'Picture: {value}', { value: zoomLabel() }),
     run: () => runColorAction('zoom')
+  },
+  {
+    label: () => t('quick.bookmark', 'Set bookmark'),
+    run: () => runColorAction('bookmark')
+  },
+  {
+    label: () =>
+      t('quick.nextBookmark', 'Next bookmark ({count})', {
+        count: bookmarkCount()
+      }),
+    run: () => runColorAction('nextBookmark'),
+    available: () => bookmarkCount() > 0
   },
   {
     label: () => t('quick.phoneQr', 'Continue on phone'),

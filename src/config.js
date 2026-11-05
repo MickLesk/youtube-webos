@@ -34,7 +34,20 @@ const BUTTON_ACTIONS = [
   { value: 'liveChat', label: 'Show/hide live chat' },
   { value: 'quickMenu', label: 'Quick menu' },
   { value: 'zoom', label: 'Zoom video' },
-  { value: 'phoneQr', label: 'Continue on phone (QR code)' }
+  { value: 'phoneQr', label: 'Continue on phone (QR code)' },
+  { value: 'bookmark', label: 'Set bookmark' },
+  { value: 'nextBookmark', label: 'Jump to next bookmark' }
+];
+
+const LANGUAGE_CHOICES = [
+  { value: 'de', label: 'Deutsch' },
+  { value: 'en', label: 'English' },
+  { value: 'fr', label: 'Français' },
+  { value: 'es', label: 'Español' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'nl', label: 'Nederlands' },
+  { value: 'pl', label: 'Polski' },
+  { value: 'tr', label: 'Türkçe' }
 ];
 
 const configOptions = new Map([
@@ -57,6 +70,59 @@ const configOptions = new Map([
   ['hideUpcoming', { default: false, desc: 'Hide upcoming premieres' }],
   ['hideMembersOnly', { default: false, desc: 'Hide members-only videos' }],
   ['hideMixes', { default: false, desc: 'Hide mixes and radio playlists' }],
+  [
+    'hideOlderThan',
+    {
+      default: 'off',
+      desc: 'Hide old videos',
+      choices: [
+        { value: 'off', label: 'Off' },
+        { value: '30', label: 'Older than 1 month' },
+        { value: '180', label: 'Older than 6 months' },
+        { value: '365', label: 'Older than 1 year' }
+      ]
+    }
+  ],
+  ['hideDuplicates', { default: false, desc: 'Hide repeated videos' }],
+  [
+    'tileRemainingTime',
+    { default: false, desc: 'Remaining time on started videos' }
+  ],
+  [
+    'newSubscriptionsNotice',
+    { default: false, desc: 'New subscription videos at start' }
+  ],
+  [
+    'breakReminder',
+    {
+      default: 'off',
+      desc: 'Break reminder',
+      choices: [
+        { value: 'off', label: 'Off' },
+        { value: '60', label: 'After 60 minutes' },
+        { value: '90', label: 'After 90 minutes' },
+        { value: '120', label: 'After 2 hours' },
+        { value: '180', label: 'After 3 hours' }
+      ]
+    }
+  ],
+  [
+    'dailyLimit',
+    {
+      default: 'off',
+      desc: 'Daily limit',
+      choices: [
+        { value: 'off', label: 'Off' },
+        { value: '1', label: '1 hour' },
+        { value: '2', label: '2 hours' },
+        { value: '3', label: '3 hours' },
+        { value: '4', label: '4 hours' },
+        { value: '6', label: '6 hours' }
+      ]
+    }
+  ],
+  ['numberKeyPages', { default: false, desc: 'Number keys open pages' }],
+  ['longBackHome', { default: false, desc: 'Hold Back to go Home' }],
   [
     'continueWatchingRow',
     { default: true, desc: '"Continue watching" row on Home' }
@@ -252,6 +318,31 @@ const configOptions = new Map([
   [
     'forceOriginalAudio',
     { default: false, desc: 'Prefer original audio over dubbed tracks' }
+  ],
+  [
+    'preferredAudioLanguage',
+    {
+      default: 'none',
+      desc: 'Preferred audio language',
+      choices: [{ value: 'none', label: 'YouTube default' }].concat(
+        LANGUAGE_CHOICES
+      )
+    }
+  ],
+  [
+    'subtitleOffset',
+    {
+      default: 0,
+      desc: 'Subtitle delay',
+      choices: [-2000, -1500, -1000, -500, 0, 500, 1000, 1500, 2000].map(
+        (value) => ({
+          value,
+          label: value
+            ? `${value > 0 ? '+' : '-'}${Math.abs(value) / 1000} s`
+            : '0 s'
+        })
+      )
+    }
   ],
   [
     'disableAutoCaptions',
@@ -599,6 +690,26 @@ const optionHelp = {
     'Puts the videos you stopped in the middle in a row at the top of Home, from the positions stored on this TV.',
   trackScreenTime:
     'Counts how long videos play, per day and per channel. Stays on this TV; shown below.',
+  preferredAudioLanguage:
+    'Keeps only the audio track in this language when a video is dubbed into it; otherwise YouTube chooses as usual. Wins over "Prefer original audio".',
+  subtitleOffset:
+    'Shifts subtitles that are out of sync. "+" shows them later, "-" earlier. Takes effect when subtitles are switched on or the next video starts.',
+  hideOlderThan:
+    'Hides videos uploaded longer ago than this from feeds and search, based on the age shown on the tile.',
+  hideDuplicates:
+    'Shows a video only once per page when YouTube puts it in several rows.',
+  tileRemainingTime:
+    'On videos you started, the tile shows the time left instead of the full length.',
+  newSubscriptionsNotice:
+    'Shows at start how many new videos your subscriptions posted since the last time.',
+  breakReminder:
+    'Reminds you to take a break after this much continuous watching.',
+  dailyLimit:
+    "Warns once a day when today's screen time passes this limit. Nothing is blocked.",
+  numberKeyPages:
+    'Outside of a video: 1 Home, 2 Subscriptions, 3 Search, 4 Library, 5 History.',
+  longBackHome:
+    'Holding the Back button for about a second returns to Home instead of one step back at a time.',
   hideMixes:
     'Hides mixes and radio playlists from feeds and keeps autoplay from drifting into a mix.',
   hideLowRated:

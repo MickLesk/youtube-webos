@@ -9,6 +9,7 @@ import { getPlayerManager, PlayerMode } from './player_api';
 import { setCurrentChannelProvider } from './ui';
 import { spoilerFreeChannels } from './channel-settings';
 import { likeRatio, requestRating } from './ratings';
+import { t } from './i18n';
 
 type Json = Record<string, unknown>;
 
@@ -248,8 +249,43 @@ function isMix(item: Json) {
   return false;
 }
 
+/** Age units in the languages the TV may show, in days. */
+const AGE_UNITS: [RegExp, number][] = [
+  [/^(sec|sek|min|hour|hr|std|stunde)/i, 0],
+  [/^(day|tag)/i, 1],
+  [/^(week|woche)/i, 7],
+  [/^(month|monat)/i, 30],
+  [/^(year|jahr)/i, 365]
+];
+const AGE_EN = /(\d+)\s+(second|minute|hour|day|week|month|year)s?\s+ago/i;
+const AGE_DE = /vor\s+(\d+)\s+(Sekunde|Minute|Stunde|Tag|Woche|Monat|Jahr)/i;
+
+/** Age in days from the "2 years ago" text of a tile, or `null`. */
+function ageDaysOf(item: Json): number | null {
+  const meta =
+    get(item, 'tileRenderer', 'metadata') ??
+    get(item, 'lockupViewModel', 'metadata');
+  let text: string;
+  try {
+    text = meta ? JSON.stringify(meta) : '';
+  } catch {
+    return null;
+  }
+  const match = AGE_EN.exec(text) ?? AGE_DE.exec(text);
+  if (!match) return null;
+  const count = Number(match[1]);
+  for (const [pattern, days] of AGE_UNITS) {
+    if (pattern.test(match[2]!)) return count * days;
+  }
+  return null;
+}
+
 interface Filters {
   noPreviews: boolean;
+  maxAgeDays: number;
+  /** First tile of each video in this response, or `null` if duplicates may stay. */
+  firstTiles: Set<Json> | null;
+  remainingTime: boolean;
   mixes: boolean;
   /** Hide videos with a like share below this (0..1), or 0. */
   minLikeRatio: number;
@@ -294,6 +330,13 @@ function shouldRemove(item: unknown, filters: Filters): boolean {
   }
   if (filters.members && MEMBERS_PATTERN.test(itemJson(item))) return true;
   if (filters.mixes && isMix(item)) return true;
+  if (filters.maxAgeDays) {
+    const age = ageDaysOf(item);
+    if (age !== null && age > filters.maxAgeDays) return true;
+  }
+  if (filters.firstTiles && videoIdOf(item) && !filters.firstTiles.has(item)) {
+    return true;
+  }
   if (filters.minLikeRatio) {
     const id = videoIdOf(item);
     if (id) {
@@ -347,6 +390,65 @@ function hideSpoilers(item: Json) {
   if (isObject(image)) {
     if (isObject(image.image)) image.image.sources = placeholder;
     delete image.overlays;
+  }
+}
+
+/**
+ * The first tile of every video in document order. The walker removes from
+ * the end of each list, so without this the last copy would survive.
+ */
+function collectFirstTiles(
+  node: unknown,
+  seen: Record<string, true>,
+  out: Set<Json>,
+  depth = 0
+) {
+  if (depth > 64 || typeof node !== 'object' || node === null) return;
+  if (Array.isArray(node)) {
+    for (const child of node) collectFirstTiles(child, seen, out, depth + 1);
+    return;
+  }
+  const item = node as Json;
+  if ('tileRenderer' in item || 'lockupViewModel' in item) {
+    const id = videoIdOf(item);
+    if (id && !seen[id]) {
+      seen[id] = true;
+      out.add(item);
+    }
+    return;
+  }
+  for (const key in item) collectFirstTiles(item[key], seen, out, depth + 1);
+}
+
+/** "23 min left" instead of the full length on started videos. */
+function showRemaining(item: Json) {
+  const percent = watchedPercent(item);
+  if (!(percent > 0 && percent < 100)) return;
+  const duration = durationOf(item);
+  if (duration === null) return;
+  const overlays = get(
+    item,
+    'tileRenderer',
+    'header',
+    'tileHeaderRenderer',
+    'thumbnailOverlays'
+  );
+  if (!Array.isArray(overlays)) return;
+  for (const overlay of overlays) {
+    const text = get(overlay, 'thumbnailOverlayTimeStatusRenderer', 'text');
+    if (!isObject(text)) continue;
+    const left = Math.max(
+      1,
+      Math.round((duration * (100 - percent)) / 100 / 60)
+    );
+    text.simpleText = t('ui.tileRemaining', '{time} left', {
+      time:
+        left >= 60
+          ? `${Math.floor(left / 60)} h ${left % 60} min`
+          : `${left} min`
+    });
+    delete text.runs;
+    return;
   }
 }
 
@@ -517,13 +619,16 @@ function removePreview(item: Json) {
   }
 }
 
-addWalkPass('feed-filters', () => {
+addWalkPass('feed-filters', (res) => {
   const lowerList = (key: string) =>
     (configRead(key) as string[]).map((s) => s.toLowerCase());
 
   const minLikeRatio = Number(configRead('hideLowRated')) || 0;
   const filters: Filters = {
     noPreviews: configRead('disablePreviews'),
+    maxAgeDays: Number(configRead('hideOlderThan')) || 0,
+    firstTiles: null,
+    remainingTime: configRead('tileRemainingTime'),
     mixes: configRead('hideMixes'),
     minLikeRatio: minLikeRatio > 0 ? minLikeRatio / 100 : 0,
     spoilerFree: spoilerFreeChannels(),
@@ -539,6 +644,10 @@ addWalkPass('feed-filters', () => {
     members: configRead('hideMembersOnly')
   };
   const dearrow = configRead('enableDeArrow');
+  if (configRead('hideDuplicates')) {
+    filters.firstTiles = new Set();
+    collectFirstTiles(res, {}, filters.firstTiles);
+  }
 
   // Subscriptions only show what is new: no Shorts, nothing already watched.
   if (configRead('cleanSubscriptions') && isSubscriptionsPage()) {
@@ -548,6 +657,9 @@ addWalkPass('feed-filters', () => {
 
   const anyFilter =
     filters.noPreviews ||
+    filters.maxAgeDays > 0 ||
+    !!filters.firstTiles ||
+    filters.remainingTime ||
     filters.mixes ||
     filters.minLikeRatio > 0 ||
     filters.spoilerFree.length > 0 ||
@@ -569,6 +681,7 @@ addWalkPass('feed-filters', () => {
       if (dearrow) deArrow(node);
       if (filters.noPreviews) removePreview(node);
       if (isSpoilerFree(node, filters.spoilerFree)) hideSpoilers(node);
+      else if (filters.remainingTime) showRemaining(node);
     }
   };
 });

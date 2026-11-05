@@ -61,6 +61,36 @@ function forceOriginalAudio(res: Json) {
   console.info('[player-response] Kept only the original audio track');
 }
 
+/** Keep only the audio track of the preferred language when it exists. */
+function preferAudioLanguage(res: Json) {
+  const lang = String(configRead('preferredAudioLanguage') || 'none');
+  if (lang === 'none') return false;
+
+  const streamingData = res.streamingData;
+  if (!isObject(streamingData)) return false;
+  const formats = asArray(streamingData.adaptiveFormats);
+  if (!formats) return false;
+
+  const isAudio = (f: unknown): f is Json =>
+    isObject(f) &&
+    typeof f.mimeType === 'string' &&
+    f.mimeType.startsWith('audio/');
+  const langOf = (f: Json) => {
+    const id = isObject(f.audioTrack) ? f.audioTrack.id : undefined;
+    return typeof id === 'string' ? id.split(/[.-]/)[0]!.toLowerCase() : '';
+  };
+
+  const audio = formats.filter(isAudio);
+  if (!audio.some((f) => isObject(f.audioTrack))) return false;
+  if (!audio.some((f) => langOf(f) === lang)) return false;
+
+  streamingData.adaptiveFormats = formats.filter(
+    (f) => !isAudio(f) || !isObject(f.audioTrack) || langOf(f) === lang
+  );
+  console.info('[player-response] Kept only the', lang, 'audio track');
+  return true;
+}
+
 /** Stop YouTube from switching subtitles on by itself. */
 function disableAutoCaptions(res: Json) {
   if (!configRead('disableAutoCaptions')) return;
@@ -184,7 +214,7 @@ function removePromotions(res: Json) {
 addParseHandler('player-response', (res) => {
   removeYouThere(res);
   removeNags(res);
-  forceOriginalAudio(res);
+  if (!preferAudioLanguage(res)) forceOriginalAudio(res);
   disableAutoCaptions(res);
   preferSubtitleLanguage(res);
   removePromotions(res);

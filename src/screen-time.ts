@@ -3,7 +3,9 @@
  * Shown in the settings (General page).
  */
 import { configRead } from './config';
+import { t } from './i18n';
 import { getPlayerManager, PlayerMode } from './player_api';
+import { showNotification } from './ui';
 
 const STORAGE_KEY = 'ytaf-screen-time';
 const TICK_MS = 10000;
@@ -77,17 +79,76 @@ void getPlayerManager().then((playerManager) => {
   setInterval(() => tick(playerManager), TICK_MS);
 });
 
+/** Seconds watched without a break of 10 minutes or more. */
+let sessionSeconds = 0;
+let lastPlayingAt = 0;
+let breakReminded = false;
+let limitWarnedOn = '';
+
+function formatHours(seconds: number) {
+  const total = Math.round(seconds / 60);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return h ? `${h} h ${m < 10 ? '0' : ''}${m} min` : `${m} min`;
+}
+
+function remind(todaySeconds: number) {
+  const breakMin = Number(configRead('breakReminder')) || 0;
+  if (breakMin && !breakReminded && sessionSeconds >= breakMin * 60) {
+    breakReminded = true;
+    showNotification(
+      t('msg.breakReminder', 'Watching for {time} now. Time for a break?', {
+        time: formatHours(sessionSeconds)
+      }),
+      8000,
+      'red'
+    );
+  }
+  const limitHours = Number(configRead('dailyLimit')) || 0;
+  const today = dayKey(new Date());
+  if (
+    limitHours &&
+    limitWarnedOn !== today &&
+    todaySeconds >= limitHours * 3600
+  ) {
+    limitWarnedOn = today;
+    showNotification(
+      t('msg.dailyLimit', 'Daily limit reached: {time} watched today', {
+        time: formatHours(todaySeconds)
+      }),
+      8000,
+      'red'
+    );
+  }
+}
+
 function tick(playerManager: Awaited<ReturnType<typeof getPlayerManager>>) {
-  if (!configRead('trackScreenTime')) return;
   if (playerManager.playerMode !== PlayerMode.NORMAL) return;
   const video = playerManager.player.querySelector('video');
-  if (!video || video.paused || video.ended || video.readyState < 3) return;
+  const playing =
+    !!video && !video.paused && !video.ended && video.readyState >= 3;
+  const now = Date.now();
+  if (!playing) {
+    if (lastPlayingAt && now - lastPlayingAt > 10 * 60 * 1000) {
+      sessionSeconds = 0;
+      breakReminded = false;
+      lastPlayingAt = 0;
+    }
+    return;
+  }
+  lastPlayingAt = now;
+  const seconds = TICK_MS / 1000;
+  sessionSeconds += seconds;
+  if (!configRead('trackScreenTime')) {
+    remind(0);
+    return;
+  }
 
   const stats = getScreenTime();
-  const seconds = TICK_MS / 1000;
   const key = dayKey(new Date());
   stats.days[key] = (stats.days[key] || 0) + seconds;
   stats.total += seconds;
+  remind(stats.days[key]!);
 
   const channel = playerManager.player.getVideoData().author?.trim();
   if (channel) {

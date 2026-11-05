@@ -8,6 +8,7 @@ import { addParseHandler } from './hooks/json-parse';
 import { t } from './i18n';
 import { innertubeFetch } from './innertube';
 import { createLogger } from './logger';
+import { showNotification } from './ui';
 
 type Json = Record<string, unknown>;
 
@@ -81,8 +82,60 @@ function collectTiles(node: unknown, out: Json[], depth = 0) {
 
 let refreshing = false;
 
+const SEEN_KEY = 'ytaf-subscriptions-seen';
+let noticeShown = false;
+
+function tileId(item: Json): string | null {
+  const id =
+    get(item, 'tileRenderer', 'contentId') ??
+    get(item, 'tileRenderer', 'onSelectCommand', 'watchEndpoint', 'videoId') ??
+    get(item, 'lockupViewModel', 'contentId');
+  return typeof id === 'string' ? id : null;
+}
+
+/** Once per app start: how many subscription videos are new since last time. */
+function noticeNewVideos(items: Json[]) {
+  if (noticeShown || !configRead('newSubscriptionsNotice')) return;
+  noticeShown = true;
+  const ids = items.map(tileId).filter((id): id is string => !!id);
+  let seen: string[] = [];
+  try {
+    seen = JSON.parse(
+      window.localStorage.getItem(SEEN_KEY) ?? '[]'
+    ) as string[];
+  } catch {
+    seen = [];
+  }
+  try {
+    window.localStorage.setItem(SEEN_KEY, JSON.stringify(ids));
+  } catch {
+    // Not critical.
+  }
+  if (!seen.length) return;
+  const fresh = ids.filter((id) => seen.indexOf(id) === -1).length;
+  if (!fresh) return;
+  showNotification(
+    fresh === 1
+      ? t('msg.newSubscriptionsOne', '1 new video from your subscriptions')
+      : t(
+          'msg.newSubscriptions',
+          '{count} new videos from your subscriptions',
+          {
+            count: fresh
+          }
+        ),
+    5000
+  );
+}
+
+function wanted() {
+  return (
+    configRead('subscriptionsOnHome') || configRead('newSubscriptionsNotice')
+  );
+}
+
 async function refresh() {
-  if (refreshing || !configRead('subscriptionsOnHome')) return;
+  if (refreshing || !wanted()) return;
   refreshing = true;
   try {
     const res = await innertubeFetch('/youtubei/v1/browse', {
@@ -90,7 +143,10 @@ async function refresh() {
     });
     const items: Json[] = [];
     collectTiles(res, items);
-    if (items.length) writeCache({ at: Date.now(), items });
+    if (items.length) {
+      writeCache({ at: Date.now(), items });
+      noticeNewVideos(items);
+    }
   } catch (err) {
     logger.warn('could not load subscriptions:', err);
   } finally {

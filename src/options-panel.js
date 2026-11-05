@@ -72,6 +72,16 @@ const SEEN_KEY = 'ytaf-seen-options';
  * marked as new once for people updating from an older version.
  */
 const RECENT_OPTIONS = [
+  'preferredAudioLanguage',
+  'subtitleOffset',
+  'hideOlderThan',
+  'hideDuplicates',
+  'tileRemainingTime',
+  'newSubscriptionsNotice',
+  'breakReminder',
+  'dailyLimit',
+  'numberKeyPages',
+  'longBackHome',
   'videoZoom',
   'videoBrightness',
   'videoContrast',
@@ -918,7 +928,18 @@ const PAGES = [
         'Interruptions',
         ['enableAdBlock', 'hideYouThere', 'hideNags', 'mutePreviews']
       ],
-      ['App', ['enhancedLongPress', 'checkForUpdates', 'trackScreenTime']]
+      [
+        'App',
+        [
+          'enhancedLongPress',
+          'numberKeyPages',
+          'longBackHome',
+          'checkForUpdates',
+          'trackScreenTime',
+          'breakReminder',
+          'dailyLimit'
+        ]
+      ]
     ],
     after: createScreenTimeSection
   },
@@ -934,6 +955,7 @@ const PAGES = [
           'videoCodec',
           'maxResolution',
           'forceOriginalAudio',
+          'preferredAudioLanguage',
           'removeEndscreen',
           'skipEndscreen',
           'skipSponsorChapters',
@@ -950,6 +972,7 @@ const PAGES = [
           'disableAutoCaptions',
           'subtitleLanguage',
           'subtitleAutoTranslate',
+          'subtitleOffset',
           'subtitleSize',
           'subtitleBackground',
           'subtitlePosition'
@@ -992,6 +1015,8 @@ const PAGES = [
           'hideMembersOnly',
           'hideMixes',
           'hideLowRated',
+          'hideOlderThan',
+          'hideDuplicates',
           'minVideoLength',
           'hideWatchRecommendations'
         ]
@@ -1001,6 +1026,7 @@ const PAGES = [
         [
           'continueWatchingRow',
           'subscriptionsOnHome',
+          'newSubscriptionsNotice',
           'cleanSubscriptions',
           'sortSubscriptions'
         ]
@@ -1009,6 +1035,7 @@ const PAGES = [
         'Thumbnails and titles',
         [
           'disablePreviews',
+          'tileRemainingTime',
           'upgradeThumbnails',
           'enableDeArrow',
           'enableDeArrowThumbnails'

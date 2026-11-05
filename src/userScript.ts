@@ -134,6 +134,15 @@ const FEATURES: [string, () => Promise<unknown>][] = [
     () => import(/* webpackMode: "eager" */ './continue-on-phone')
   ],
   ['screen-time', () => import(/* webpackMode: "eager" */ './screen-time')],
+  [
+    'subtitle-offset',
+    () => import(/* webpackMode: "eager" */ './subtitle-offset')
+  ],
+  ['bookmarks', () => import(/* webpackMode: "eager" */ './bookmarks')],
+  [
+    'page-shortcuts',
+    () => import(/* webpackMode: "eager" */ './page-shortcuts')
+  ],
   ['emoji', () => import(/* webpackMode: "eager" */ './emoji')],
   [
     'subtitle-style',

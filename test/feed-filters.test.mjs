@@ -223,6 +223,43 @@ describe('feed filters', () => {
     assert.match(header.thumbnail.thumbnails[0].url, /^data:image\/svg\+xml/);
   });
 
+  it('hides videos older than the limit, in English and German', () => {
+    configWrite('hideOlderThan', '180');
+    const aged = (id, text) =>
+      tile(id, {
+        extra: {
+          metadata: {
+            tileMetadataRenderer: {
+              title: { simpleText: id },
+              lines: [
+                {
+                  lineRenderer: {
+                    items: [
+                      { lineItemRenderer: { text: { simpleText: text } } }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      });
+    const res = parseFeed([
+      aged('a', '3 weeks ago'),
+      aged('b', '2 years ago'),
+      aged('c', 'vor 7 Monaten'),
+      aged('d', 'vor 5 Monaten'),
+      tile('e')
+    ]);
+    assert.deepEqual(idsOf(res), ['a', 'd', 'e']);
+  });
+
+  it('shows a repeated video only once per response', () => {
+    configWrite('hideDuplicates', true);
+    const res = parseFeed([tile('a'), tile('b'), tile('a')]);
+    assert.deepEqual(idsOf(res), ['a', 'b']);
+  });
+
   it('only counts YouTube responses in the timing stats', () => {
     const before = getParseStats().responses;
     JSON.parse('{"a":1}');
