@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.8] - 2026/11/05
+
+### Added
+
+- Appearance: "Settings menu size" (large, medium, small) for TVs that cut off the edges of the picture; the default is medium
+
+### Fixed
+
+- Videos opened from a running preview no longer get stuck on the loading animation: the forced quality and the remembered position are applied only once the video really plays, and a preview is never started in the middle
+- Settings panel: the list scrolls along with the focus, so the focused row stays in the upper part of the panel and is readable even if the TV shows only part of it
+
 ## [0.9.7] - 2026/10/13
 
 ### Fixed
