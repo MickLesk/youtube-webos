@@ -1129,6 +1129,18 @@ function pageKeys(page) {
 /** Share of the screen each `panelSize` takes up. */
 const PANEL_SIZES = { large: 1, medium: 0.8, small: 0.65 };
 
+// 0.9.8 to 0.11.0 shipped with "medium" as the default, and presets wrote
+// it into the settings. Put it back to "large" once; later choices stay.
+const SIZE_RESET_KEY = 'ytaf-panel-size-reset';
+try {
+  if (!window.localStorage.getItem(SIZE_RESET_KEY)) {
+    if (configRead('panelSize') === 'medium') configWrite('panelSize', 'large');
+    window.localStorage.setItem(SIZE_RESET_KEY, '1');
+  }
+} catch {
+  // Storage unavailable: nothing to migrate.
+}
+
 /** @param {Page} page */
 function buildPage(page) {
   const elmPage = el('div', 'ytaf-ui-page');
