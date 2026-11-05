@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.11.0] - 2026/11/05
+
+### Added
+
+- Subtitles: delay/advance subtitles in 0.5 s steps for tracks that are out of sync
+- Playback: preferred audio language for dubbed videos; bookmarks inside videos (set and jump with color buttons or the quick menu)
+- Feeds: hide videos older than 1 month, 6 months or 1 year; show a repeated video only once per page; time left instead of the full length on started videos
+- Home: notice at start with the number of new subscription videos since the last time
+- Controls: number keys open Home, Subscriptions, Search, Library and History outside of a video; holding Back returns to Home
+- Screen time: break reminder after a chosen stretch of continuous watching and a daily limit warning
+
 ## [0.10.0] - 2026/11/05
 
 ### Added
