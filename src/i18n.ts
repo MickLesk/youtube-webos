@@ -427,6 +427,12 @@ const de: Record<string, string> = {
   'ui.continueWatching': 'Weiterschauen',
   'ui.continueAt': 'Weiter bei {time}',
   'ui.screenTime': 'Bildschirmzeit',
+  'ui.sidebar': 'Seitenleiste',
+  'ui.sidebarHelp':
+    'Schaltet Einträge der linken YouTube-Leiste aus. Wirkt, sobald YouTube die Leiste neu lädt, spätestens beim nächsten Start der App.',
+  'ui.sidebarEmpty':
+    'Noch keine Einträge bekannt. Öffne einmal die Startseite, dann erscheinen sie hier.',
+  'ui.sidebarShow': 'Anzeigen: {name}',
   'ui.screenTimeToday': 'Heute: {time}',
   'ui.screenTimeWeek': 'Letzte 7 Tage: {time}',
   'ui.screenTimeTotal': 'Gesamt seit {date}: {time}',

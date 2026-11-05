@@ -139,6 +139,7 @@ const FEATURES: [string, () => Promise<unknown>][] = [
     () => import(/* webpackMode: "eager" */ './subtitle-offset')
   ],
   ['bookmarks', () => import(/* webpackMode: "eager" */ './bookmarks')],
+  ['sidebar', () => import(/* webpackMode: "eager" */ './sidebar')],
   [
     'page-shortcuts',
     () => import(/* webpackMode: "eager" */ './page-shortcuts')

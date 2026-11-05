@@ -24,6 +24,7 @@ import {
   setChannelSetting
 } from './channel-settings';
 import { resetScreenTime, summarizeScreenTime } from './screen-time';
+import { getSidebarEntries, isSidebarEntryHidden } from './sidebar';
 import {
   formatDuration,
   getSkipStats,
@@ -452,6 +453,66 @@ function describeChannelSettings(settings) {
     parts.push(t('ui.channelSpoilerFreeShort', 'spoiler protection'));
   }
   return parts.join(', ');
+}
+
+/* ------------------------------ Sidebar ------------------------------ */
+
+function createSidebarSection() {
+  const key = 'hiddenSidebarEntries';
+  const elmSection = el('div', 'ytaf-ui-group');
+  elmSection.appendChild(createHeading(t('ui.sidebar', 'Sidebar')));
+  const elmList = document.createElement('div');
+  elmSection.appendChild(elmList);
+
+  const render = () => {
+    elmList.textContent = '';
+    const entries = getSidebarEntries();
+    if (!entries.length) {
+      const elmEmpty = el('div', 'ytaf-ui-empty');
+      elmEmpty.textContent = t(
+        'ui.sidebarEmpty',
+        'No entries known yet. Open Home once and they appear here.'
+      );
+      elmList.appendChild(elmEmpty);
+      return;
+    }
+    for (const entry of entries) {
+      const { row, value } = createRow(
+        t('ui.sidebarShow', 'Show: {name}', { name: entry.title })
+      );
+      row.className += ' ytaf-ui-row-toggle';
+      row.setAttribute(
+        'data-help',
+        t(
+          'ui.sidebarHelp',
+          "Switches entries of YouTube's left bar off. Takes effect when YouTube reloads the bar, at the latest when the app starts next."
+        )
+      );
+      const elmToggle = el('span', 'ytaf-ui-toggle');
+      elmToggle.appendChild(el('span', 'ytaf-ui-knob'));
+      value.appendChild(elmToggle);
+      elmToggle.classList.toggle(
+        'ytaf-ui-toggle-on',
+        !isSidebarEntryHidden(entry.id)
+      );
+      row.addEventListener('click', () => {
+        const hidden = configRead(key).filter((id) => id !== entry.id);
+        if (!isSidebarEntryHidden(entry.id)) hidden.push(entry.id);
+        configWrite(key, hidden);
+      });
+      elmList.appendChild(row);
+    }
+  };
+
+  configAddChangeListener(key, () => {
+    render();
+    // Keep the focus on the list after a toggle re-renders it.
+    const first = elmList.querySelector('button');
+    if (first && !elmList.contains(document.activeElement)) first.focus();
+  });
+  elmSection.addEventListener('ytaf-refresh', render);
+  render();
+  return elmSection;
 }
 
 /* ----------------------------- Screen time ----------------------------- */
@@ -1067,7 +1128,8 @@ const PAGES = [
         'Interface',
         ['panelSize', 'hideLogo', 'oledTheme', 'twemoji', 'disableAnimations']
       ]
-    ]
+    ],
+    after: createSidebarSection
   },
   {
     title: 'Buttons',

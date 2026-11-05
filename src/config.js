@@ -155,6 +155,7 @@ const configOptions = new Map([
   ],
   ['hiddenShelves', { default: [], desc: 'Hide shelves whose title contains' }],
   ['channelSettings', { default: {}, desc: 'Per-channel settings' }],
+  ['hiddenSidebarEntries', { default: [], desc: 'Hidden sidebar entries' }],
   [
     'minVideoLength',
     {
