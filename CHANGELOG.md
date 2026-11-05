@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.11.1] - 2026/11/05
+
+### Fixed
+
+- Settings panel: the list now moves with the focus on every TV. The page is shifted directly instead of scrolling the list box, which some TV browsers refuse when they consider the content fully visible
+- Settings panel: the default size is "large" again; "medium" and "small" stay available in Appearance
+
 ## [0.11.0] - 2026/11/05
 
 ### Added
