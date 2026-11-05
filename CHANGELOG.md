@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.10.0] - 2026/11/05
+
+### Added
+
+- Picture: video zoom (original, fill, zoom) to cut off black bars, also on a color button and in the quick menu; brightness, contrast and saturation for the video only
+- Playback: skip the end screen (jumps to the end or the next queued video as soon as the suggestions start) and skip chapters whose title marks a sponsor, ad or promo
+- Playback: pause and save the position when the TV switches to another input, app or standby
+- Feeds: hide mixes and radio playlists (autoplay no longer drifts into a mix) and hide poorly rated videos below a chosen share of likes (Return YouTube Dislike, fetched in the background)
+- Home: "Continue watching" row from the positions stored on this TV, with progress and "Continue at" time
+- Channel settings: spoiler protection, which hides thumbnails, durations and progress of a channel's videos in feeds
+- "Continue on your phone": a QR code with the video and current position, on a color button and in the quick menu
+- General: screen time per day, last 7 days and total with the channels watched most, kept on this TV, with a reset
+
 ## [0.9.8] - 2026/11/05
 
 ### Added
