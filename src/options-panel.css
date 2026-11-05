@@ -169,7 +169,12 @@
   right: 18em;
   bottom: 0;
   padding: 0.4em 1.6em 1.6em;
-  overflow-y: auto;
+  /* The page is moved with a margin (options-panel.js), never scrolled. */
+  overflow: hidden;
+}
+
+.ytaf-ui-page {
+  position: relative;
 }
 
 .ytaf-ui-group {

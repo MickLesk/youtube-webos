@@ -1143,35 +1143,41 @@ function buildPage(page) {
 /* -------------------------------- Panel -------------------------------- */
 
 /**
- * Scroll `container` so that `elm` sits in its upper part. The list moves
- * along with the focus, like the rest of the TV interface, so the focused
- * row is readable even when the TV shows only part of the panel. Uses
- * layout offsets instead of getBoundingClientRect, which older Chrome
- * reports wrongly on zoomed pages. Done manually because scrollIntoView
- * options are not supported on older webOS versions.
- * @param {HTMLElement} container
+ * Move the current page so that `elm` sits in the upper part of the list.
+ * The list moves along with the focus, like the rest of the TV interface,
+ * so the focused row is readable even when the TV shows only part of the
+ * panel. The page is shifted with a margin instead of scrolling the
+ * container: some TV browsers refuse to scroll a box whose content they
+ * consider fully visible, and layout offsets stay correct on zoomed pages
+ * where getBoundingClientRect does not.
+ * @param {HTMLElement} container the list box
  * @param {EventTarget | null} elm
  */
 function scrollIntoContainer(container, elm) {
   if (!(elm instanceof HTMLElement) || !container.contains(elm)) return;
 
+  // The page is the child of the list that holds the control.
+  let page = elm;
+  while (page.parentElement && page.parentElement !== container) {
+    page = page.parentElement;
+  }
   let top = 0;
   for (
     let node = elm;
-    node && node !== container;
+    node && node !== page;
     node = /** @type {HTMLElement | null} */ (node.offsetParent)
   ) {
     top += node.offsetTop;
   }
-  const height = elm.offsetHeight;
   const viewH = container.clientHeight;
   if (!(viewH > 0)) return;
 
   // Rows near the top stay put; from then on the focus is kept at about a
-  // third of the visible height.
+  // third of the visible height. No lower limit: the last rows may leave
+  // empty space below, so they also move up.
   const anchor = viewH * 0.3;
-  const target = Math.max(0, Math.round(top + height / 2 - anchor));
-  if (Math.abs(container.scrollTop - target) > 1) container.scrollTop = target;
+  const shift = Math.max(0, Math.round(top + elm.offsetHeight / 2 - anchor));
+  page.style.marginTop = shift ? `-${shift}px` : '0px';
 }
 
 /**
@@ -1335,7 +1341,7 @@ function createOptionsPanel() {
   };
 
   function showPage(index) {
-    if (index !== currentPage) elmBody.scrollTop = 0;
+    if (index !== currentPage) pages[index].style.marginTop = '0px';
     currentPage = index;
     pages.forEach((elmPage, i) => {
       elmPage.style.display = i === index ? 'block' : 'none';
@@ -1491,7 +1497,7 @@ function createOptionsPanel() {
         const next = controls[index + (code === KEY_DOWN ? 1 : -1)];
         if (next) next.focus();
         else if (index === -1) enterPage();
-        else if (code === KEY_UP) elmBody.scrollTop = 0;
+        else if (code === KEY_UP) pages[currentPage].style.marginTop = '0px';
       }
     } else if (code === KEY_ENTER) {
       /**
@@ -1624,11 +1630,6 @@ function createOptionsPanel() {
     }
     lastFit = { scale, zoom, left: Math.round(left), top: Math.round(top) };
 
-    // Room below the last rows, so they too can be scrolled up into view.
-    const pad = `${Math.round(elmBody.clientHeight * 0.7)}px`;
-    pages.forEach((elmPage) => {
-      elmPage.style.paddingBottom = pad;
-    });
     scrollIntoContainer(elmBody, document.activeElement);
   }
 

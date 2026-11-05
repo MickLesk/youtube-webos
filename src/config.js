@@ -395,7 +395,7 @@ const configOptions = new Map([
   [
     'panelSize',
     {
-      default: 'medium',
+      default: 'large',
       desc: 'Settings menu size',
       choices: [
         { value: 'large', label: 'Large' },
