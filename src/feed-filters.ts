@@ -7,6 +7,8 @@ import { addParseHandler } from './hooks/json-parse';
 import { addWalkPass } from './hooks/response-walker';
 import { getPlayerManager, PlayerMode } from './player_api';
 import { setCurrentChannelProvider } from './ui';
+import { spoilerFreeChannels } from './channel-settings';
+import { likeRatio, requestRating } from './ratings';
 
 type Json = Record<string, unknown>;
 
@@ -211,8 +213,47 @@ function matchesAny(text: string | null, needles: string[]) {
   return needles.some((needle) => lower.includes(needle));
 }
 
+/** Mixes and radio playlists have ids starting with "RD". */
+function isMix(item: Json) {
+  const playlistId =
+    get(
+      item,
+      'tileRenderer',
+      'onSelectCommand',
+      'watchEndpoint',
+      'playlistId'
+    ) ??
+    get(
+      item,
+      'tileRenderer',
+      'onSelectCommand',
+      'watchPlaylistEndpoint',
+      'playlistId'
+    ) ??
+    (get(item, 'lockupViewModel', 'contentType') ===
+    'LOCKUP_CONTENT_TYPE_PLAYLIST'
+      ? get(item, 'lockupViewModel', 'contentId')
+      : undefined);
+  if (typeof playlistId === 'string' && playlistId.indexOf('RD') === 0) {
+    // A video tile that merely continues into a mix stays; only the mix
+    // tile itself goes.
+    return (
+      get(item, 'tileRenderer', 'contentType') ===
+        'TILE_CONTENT_TYPE_PLAYLIST' ||
+      get(item, 'tileRenderer', 'onSelectCommand', 'watchPlaylistEndpoint') !==
+        undefined ||
+      'lockupViewModel' in item
+    );
+  }
+  return false;
+}
+
 interface Filters {
   noPreviews: boolean;
+  mixes: boolean;
+  /** Hide videos with a like share below this (0..1), or 0. */
+  minLikeRatio: number;
+  spoilerFree: string[];
   keywords: string[];
   shelves: string[];
   minLength: number;
@@ -252,7 +293,67 @@ function shouldRemove(item: unknown, filters: Filters): boolean {
     if (filters.upcoming && UPCOMING_PATTERN.test(badges)) return true;
   }
   if (filters.members && MEMBERS_PATTERN.test(itemJson(item))) return true;
+  if (filters.mixes && isMix(item)) return true;
+  if (filters.minLikeRatio) {
+    const id = videoIdOf(item);
+    if (id) {
+      const ratio = likeRatio(id);
+      if (ratio === null) requestRating(id);
+      else if (ratio < filters.minLikeRatio) return true;
+    }
+  }
   return false;
+}
+
+/* --------------------------- Spoiler protection --------------------------- */
+
+/** A neutral grey tile instead of the thumbnail. */
+const SPOILER_IMAGE =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180">' +
+      '<rect width="320" height="180" fill="#2a2a2a"/>' +
+      '<circle cx="160" cy="80" r="26" fill="none" stroke="#666" stroke-width="6"/>' +
+      '<path d="M120 80 Q160 40 200 80 Q160 120 120 80z" fill="none" stroke="#666" stroke-width="6"/>' +
+      '<path d="M128 112 L192 48" stroke="#666" stroke-width="6"/>' +
+      '</svg>'
+  );
+
+/** Hide thumbnail, duration and progress of a tile. */
+function hideSpoilers(item: Json) {
+  const placeholder = [{ url: SPOILER_IMAGE, width: 320, height: 180 }];
+  const header = get(item, 'tileRenderer', 'header', 'tileHeaderRenderer');
+  if (isObject(header)) {
+    if (isObject(header.thumbnail)) header.thumbnail.thumbnails = placeholder;
+    delete header.movingThumbnail;
+    if (Array.isArray(header.thumbnailOverlays)) {
+      header.thumbnailOverlays = header.thumbnailOverlays.filter(
+        (overlay) =>
+          !isObject(overlay) ||
+          (!('thumbnailOverlayTimeStatusRenderer' in overlay) &&
+            !('thumbnailOverlayResumePlaybackRenderer' in overlay))
+      );
+    }
+  }
+  const tile = get(item, 'tileRenderer');
+  if (isObject(tile)) delete tile.onFocusCommand;
+
+  const image = get(
+    item,
+    'lockupViewModel',
+    'contentImage',
+    'thumbnailViewModel'
+  );
+  if (isObject(image)) {
+    if (isObject(image.image)) image.image.sources = placeholder;
+    delete image.overlays;
+  }
+}
+
+function isSpoilerFree(item: Json, channels: string[]) {
+  if (!channels.length) return false;
+  const channel = channelOf(item);
+  return !!channel && channels.indexOf(channel) !== -1;
 }
 
 /* ----------------------------- DeArrow ----------------------------- */
@@ -420,8 +521,12 @@ addWalkPass('feed-filters', () => {
   const lowerList = (key: string) =>
     (configRead(key) as string[]).map((s) => s.toLowerCase());
 
+  const minLikeRatio = Number(configRead('hideLowRated')) || 0;
   const filters: Filters = {
     noPreviews: configRead('disablePreviews'),
+    mixes: configRead('hideMixes'),
+    minLikeRatio: minLikeRatio > 0 ? minLikeRatio / 100 : 0,
+    spoilerFree: spoilerFreeChannels(),
     keywords: lowerList('blockedKeywords'),
     shelves: lowerList('hiddenShelves'),
     minLength: (Number(configRead('minVideoLength')) || 0) * 60,
@@ -443,6 +548,9 @@ addWalkPass('feed-filters', () => {
 
   const anyFilter =
     filters.noPreviews ||
+    filters.mixes ||
+    filters.minLikeRatio > 0 ||
+    filters.spoilerFree.length > 0 ||
     filters.keywords.length > 0 ||
     filters.shelves.length > 0 ||
     filters.minLength > 0 ||
@@ -460,8 +568,36 @@ addWalkPass('feed-filters', () => {
     tile: (node) => {
       if (dearrow) deArrow(node);
       if (filters.noPreviews) removePreview(node);
+      if (isSpoilerFree(node, filters.spoilerFree)) hideSpoilers(node);
     }
   };
+});
+
+/** Strip the mix from autoplay so the next video plays on its own. */
+function stripMix(node: unknown, depth = 0) {
+  if (!isObject(node) || depth > 12) return;
+  const endpoint = node.watchEndpoint;
+  if (
+    isObject(endpoint) &&
+    typeof endpoint.playlistId === 'string' &&
+    endpoint.playlistId.indexOf('RD') === 0
+  ) {
+    delete endpoint.playlistId;
+    delete endpoint.playlistIndex;
+    delete endpoint.params;
+  }
+  for (const key of Object.keys(node)) stripMix(node[key], depth + 1);
+}
+
+addParseHandler('hide-mixes', (res) => {
+  if (!configRead('hideMixes')) return;
+  const autoplay = get(
+    res,
+    'contents',
+    'singleColumnWatchNextResults',
+    'autoplay'
+  );
+  if (autoplay) stripMix(autoplay);
 });
 
 /** Remove the suggested videos below the player on the watch page. */

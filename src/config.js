@@ -32,7 +32,9 @@ const BUTTON_ACTIONS = [
   { value: 'pip', label: 'Picture-in-picture' },
   { value: 'queueNext', label: 'Play next in queue' },
   { value: 'liveChat', label: 'Show/hide live chat' },
-  { value: 'quickMenu', label: 'Quick menu' }
+  { value: 'quickMenu', label: 'Quick menu' },
+  { value: 'zoom', label: 'Zoom video' },
+  { value: 'phoneQr', label: 'Continue on phone (QR code)' }
 ];
 
 const configOptions = new Map([
@@ -54,6 +56,25 @@ const configOptions = new Map([
   ['hideLiveStreams', { default: false, desc: 'Hide live streams' }],
   ['hideUpcoming', { default: false, desc: 'Hide upcoming premieres' }],
   ['hideMembersOnly', { default: false, desc: 'Hide members-only videos' }],
+  ['hideMixes', { default: false, desc: 'Hide mixes and radio playlists' }],
+  [
+    'continueWatchingRow',
+    { default: true, desc: '"Continue watching" row on Home' }
+  ],
+  ['trackScreenTime', { default: true, desc: 'Record screen time' }],
+  [
+    'hideLowRated',
+    {
+      default: 'off',
+      desc: 'Hide poorly rated videos',
+      choices: [
+        { value: 'off', label: 'Off' },
+        { value: '70', label: 'Below 70% likes' },
+        { value: '80', label: 'Below 80% likes' },
+        { value: '90', label: 'Below 90% likes' }
+      ]
+    }
+  ],
   [
     'hideWatchedVideos',
     { default: false, desc: 'Hide watched videos in feeds' }
@@ -387,6 +408,69 @@ const configOptions = new Map([
     'removeEndscreen',
     { default: false, desc: 'Remove end screens from video' }
   ],
+  ['skipEndscreen', { default: false, desc: 'Skip the end screen' }],
+  ['skipSponsorChapters', { default: false, desc: 'Skip sponsor chapters' }],
+  ['pauseOnHide', { default: false, desc: 'Pause when the TV switches away' }],
+  [
+    'videoZoom',
+    {
+      default: 'original',
+      desc: 'Video zoom',
+      choices: [
+        { value: 'original', label: 'Original' },
+        { value: 'fill', label: 'Fill (no black bars)' },
+        { value: 'zoom', label: 'Zoom' }
+      ]
+    }
+  ],
+  [
+    'videoBrightness',
+    {
+      default: 100,
+      desc: 'Brightness',
+      choices: [
+        { value: 80, label: '80%' },
+        { value: 90, label: '90%' },
+        { value: 100, label: '100%' },
+        { value: 110, label: '110%' },
+        { value: 120, label: '120%' },
+        { value: 130, label: '130%' },
+        { value: 150, label: '150%' }
+      ]
+    }
+  ],
+  [
+    'videoContrast',
+    {
+      default: 100,
+      desc: 'Contrast',
+      choices: [
+        { value: 80, label: '80%' },
+        { value: 90, label: '90%' },
+        { value: 100, label: '100%' },
+        { value: 110, label: '110%' },
+        { value: 120, label: '120%' },
+        { value: 130, label: '130%' }
+      ]
+    }
+  ],
+  [
+    'videoSaturation',
+    {
+      default: 100,
+      desc: 'Saturation',
+      choices: [
+        { value: 0, label: '0%' },
+        { value: 50, label: '50%' },
+        { value: 80, label: '80%' },
+        { value: 90, label: '90%' },
+        { value: 100, label: '100%' },
+        { value: 110, label: '110%' },
+        { value: 120, label: '120%' },
+        { value: 140, label: '140%' }
+      ]
+    }
+  ],
   [
     'mutePreviews',
     { default: false, desc: 'Mute video previews while browsing' }
@@ -498,6 +582,27 @@ const optionHelp = {
   disableAutoCaptions:
     'YouTube may switch subtitles on when the audio language differs from yours. This stops that.',
   removeEndscreen: 'Hides the video suggestions shown over the last seconds.',
+  skipEndscreen:
+    'Jumps to the end as soon as the end screen with the suggestions starts, so the next video (or the queue) begins right away.',
+  skipSponsorChapters:
+    'Skips chapters whose title says sponsor, ad, promo or Werbung, also when SponsorBlock has no data for the video.',
+  pauseOnHide:
+    'Pauses the video and saves the position when the TV switches to another input, app or standby.',
+  videoZoom:
+    'Enlarges the picture to cut black bars off widescreen videos. "Fill" removes the bars of 21:9 videos, "Zoom" cuts more. Also available on a color button and in the quick menu.',
+  videoBrightness:
+    'Brightens dark videos without touching the TV settings. Filters may stutter on older TVs.',
+  videoContrast: 'Contrast of the video picture only.',
+  videoSaturation:
+    'Color intensity of the video picture only; 0% is black and white.',
+  continueWatchingRow:
+    'Puts the videos you stopped in the middle in a row at the top of Home, from the positions stored on this TV.',
+  trackScreenTime:
+    'Counts how long videos play, per day and per channel. Stays on this TV; shown below.',
+  hideMixes:
+    'Hides mixes and radio playlists from feeds and keeps autoplay from drifting into a mix.',
+  hideLowRated:
+    'Hides videos whose share of likes (returnyoutubedislike.com) is below the limit. Ratings are fetched in the background, so a video may still show up the first time.',
   subscriptionsOnHome:
     'Adds a row with the newest videos from your subscriptions at the top of Home. It is refreshed in the background every 15 minutes.',
   perAccountSettings:

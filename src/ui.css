@@ -190,3 +190,53 @@ img.ytaf-emoji {
   margin: 0 0.05em 0 0.1em;
   vertical-align: -0.1em;
 }
+
+/* "Continue on your phone" QR code (continue-on-phone.ts). */
+.ytaf-phone-qr {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 1300;
+  width: 22rem;
+  margin: -16rem 0 0 -11rem;
+  padding: 1.2rem;
+  border-radius: 0.8rem;
+  background-color: rgba(15, 15, 15, 0.97);
+  color: #f1f1f1;
+  text-align: center;
+  font-family: 'YouTube Sans', Roboto, Arial, sans-serif;
+}
+
+.ytaf-phone-qr-title {
+  margin-bottom: 0.8rem;
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.ytaf-phone-qr-code {
+  width: 18rem;
+  height: 18rem;
+  margin: 0 auto;
+  padding: 0.6rem;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.ytaf-phone-qr-code svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ytaf-phone-qr-url {
+  margin-top: 0.8rem;
+  font-size: 1rem;
+  color: #aaa;
+  word-break: break-all;
+}
+
+.ytaf-phone-qr-hint {
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+  color: #888;
+}

@@ -118,7 +118,22 @@ const FEATURES: [string, () => Promise<unknown>][] = [
     () => import(/* webpackMode: "eager" */ './resume-position')
   ],
   ['number-keys', () => import(/* webpackMode: "eager" */ './number-keys')],
+  ['video-picture', () => import(/* webpackMode: "eager" */ './video-picture')],
   ['quick-menu', () => import(/* webpackMode: "eager" */ './quick-menu')],
+  [
+    'skip-endscreen',
+    () => import(/* webpackMode: "eager" */ './skip-endscreen')
+  ],
+  ['pause-on-hide', () => import(/* webpackMode: "eager" */ './pause-on-hide')],
+  [
+    'continue-watching',
+    () => import(/* webpackMode: "eager" */ './continue-watching')
+  ],
+  [
+    'continue-on-phone',
+    () => import(/* webpackMode: "eager" */ './continue-on-phone')
+  ],
+  ['screen-time', () => import(/* webpackMode: "eager" */ './screen-time')],
   ['emoji', () => import(/* webpackMode: "eager" */ './emoji')],
   [
     'subtitle-style',

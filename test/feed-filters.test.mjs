@@ -157,6 +157,72 @@ describe('feed filters', () => {
     assert.deepEqual(idsOf(res), ['b', 'c', 'd']);
   });
 
+  it('hides mixes but keeps videos that continue into one', () => {
+    configWrite('hideMixes', true);
+    const mix = tile('m', {
+      extra: {
+        contentType: 'TILE_CONTENT_TYPE_PLAYLIST',
+        onSelectCommand: {
+          watchEndpoint: { videoId: 'm', playlistId: 'RDm' }
+        }
+      }
+    });
+    const video = tile('v', {
+      extra: {
+        onSelectCommand: { watchEndpoint: { videoId: 'v', playlistId: 'RDv' } }
+      }
+    });
+    assert.deepEqual(idsOf(parseFeed([mix, video, tile('a')])), ['v', 'a']);
+  });
+
+  it('hides poorly rated videos once their rating is cached', () => {
+    configWrite('hideLowRated', '80');
+    globalThis.localStorage.setItem(
+      'ytaf-ratings',
+      JSON.stringify({
+        bad: [70, 30, Date.now()],
+        good: [95, 5, Date.now()],
+        few: [1, 9, Date.now()]
+      })
+    );
+    const res = parseFeed([tile('bad'), tile('good'), tile('few'), tile('x')]);
+    assert.deepEqual(idsOf(res), ['good', 'few', 'x']);
+  });
+
+  it('hides thumbnails and durations of spoiler-free channels', () => {
+    configWrite('channelSettings', { 'Sports Club': { spoilerFree: true } });
+    const res = parseFeed([
+      withDuration('a', '1:30:00'),
+      tile('b', {
+        channel: 'Sports Club',
+        extra: {
+          header: {
+            tileHeaderRenderer: {
+              thumbnail: { thumbnails: [{ url: 'https://x/real.jpg' }] },
+              thumbnailOverlays: [
+                {
+                  thumbnailOverlayTimeStatusRenderer: {
+                    text: { simpleText: '2:10:00' }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      })
+    ]);
+    const [a, b] =
+      res.contents.tvBrowseRenderer.content.sectionListRenderer.contents[0]
+        .shelfRenderer.content.horizontalListRenderer.items;
+    assert.equal(
+      a.tileRenderer.header.tileHeaderRenderer.thumbnailOverlays.length,
+      1
+    );
+    const header = b.tileRenderer.header.tileHeaderRenderer;
+    assert.equal(header.thumbnailOverlays.length, 0);
+    assert.match(header.thumbnail.thumbnails[0].url, /^data:image\/svg\+xml/);
+  });
+
   it('only counts YouTube responses in the timing stats', () => {
     const before = getParseStats().responses;
     JSON.parse('{"a":1}');

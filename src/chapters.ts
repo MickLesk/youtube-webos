@@ -2,9 +2,10 @@
  * Collects chapter markers from YouTube responses so a color button can jump
  * to the next chapter.
  */
+import { configRead } from './config';
 import { addParseHandler } from './hooks/json-parse';
 import { t } from './i18n';
-import { getPlayerManager } from './player_api';
+import { getPlayerManager, PlayerMode } from './player_api';
 import { setColorActionHandler, showNotification } from './ui';
 
 interface Chapter {
@@ -113,3 +114,67 @@ setColorActionHandler('nextChapter', () => {
   showNotification(next.title || t('msg.nextChapter', 'Next chapter'), 2000);
   return true;
 });
+
+/* ------------------------- Sponsor chapters ------------------------- */
+
+/** Chapter titles that mark paid promotion, in English and German. */
+const SPONSOR_PATTERN =
+  /sponsor|werbung|anzeige|advert|promo|\bads?\b|\bad break\b|paid promotion/i;
+
+/** Chapters already skipped (or entered again by the viewer), per video. */
+let skippedFor: string | null = null;
+let skipped: Chapter[] = [];
+
+/**
+ * Skips a chapter whose title marks a sponsor segment, once per chapter.
+ * Only while the video really plays, so a player that is still starting
+ * is never seeked.
+ */
+function checkSponsorChapter() {
+  if (!configRead('skipSponsorChapters')) return;
+  if (playerManager.playerMode !== PlayerMode.NORMAL) return;
+  const id = playerManager.currentVideoID;
+  const chapters = id ? chaptersByVideo.get(id) : undefined;
+  if (!id || !chapters) return;
+  if (skippedFor !== id) {
+    skippedFor = id;
+    skipped = [];
+  }
+
+  const video = playerManager.player.querySelector('video');
+  if (!video || video.paused || video.readyState < 3) return;
+  const time = video.currentTime;
+  if (time < 1) return;
+
+  let current: Chapter | undefined;
+  let next: Chapter | undefined;
+  for (const chapter of chapters) {
+    if (chapter.start <= time) current = chapter;
+    else {
+      next = chapter;
+      break;
+    }
+  }
+  if (!current || skipped.indexOf(current) !== -1) return;
+  if (!SPONSOR_PATTERN.test(current.title)) return;
+  // Already at the chapter's end (seeked back into it later, for example).
+  const end = next ? next.start : video.duration - 1;
+  if (!(end > time + 1)) return;
+
+  skipped.push(current);
+  video.currentTime = end;
+  showNotification(
+    t('msg.chapterSkipped', 'Chapter skipped: {title}', {
+      title: current.title
+    }),
+    2500
+  );
+}
+
+document.addEventListener(
+  'timeupdate',
+  (evt) => {
+    if (evt.target instanceof HTMLVideoElement) checkSponsorChapter();
+  },
+  true
+);

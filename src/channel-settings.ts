@@ -12,6 +12,8 @@ export interface ChannelSettings {
   noSponsorBlock?: boolean;
   /** Highest video height, overrides the global maximum resolution. */
   maxResolution?: number;
+  /** Thumbnails and durations of this channel's videos are hidden. */
+  spoilerFree?: boolean;
 }
 
 type ChannelMap = Record<string, ChannelSettings>;
@@ -74,4 +76,10 @@ export function currentChannelSpeed(): number | null {
 
 export function sponsorBlockOffForCurrentChannel(): boolean {
   return !!getChannelSettings(currentChannel()).noSponsorBlock;
+}
+
+/** Channels whose videos must not give anything away in feeds. */
+export function spoilerFreeChannels(): string[] {
+  const all = readAll();
+  return Object.keys(all).filter((name) => all[name]!.spoilerFree);
 }

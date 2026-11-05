@@ -23,6 +23,7 @@ import {
   removeChannelSettings,
   setChannelSetting
 } from './channel-settings';
+import { resetScreenTime, summarizeScreenTime } from './screen-time';
 import {
   formatDuration,
   getSkipStats,
@@ -71,6 +72,15 @@ const SEEN_KEY = 'ytaf-seen-options';
  * marked as new once for people updating from an older version.
  */
 const RECENT_OPTIONS = [
+  'videoZoom',
+  'videoBrightness',
+  'videoContrast',
+  'videoSaturation',
+  'skipEndscreen',
+  'skipSponsorChapters',
+  'pauseOnHide',
+  'hideMixes',
+  'hideLowRated',
   'panelSize',
   'subtitleAutoTranslate',
   'subtitleSize',
@@ -428,7 +438,74 @@ function describeChannelSettings(settings) {
   if (settings.noSponsorBlock) {
     parts.push(t('ui.channelNoSponsorBlock', 'no SponsorBlock'));
   }
+  if (settings.spoilerFree) {
+    parts.push(t('ui.channelSpoilerFreeShort', 'spoiler protection'));
+  }
   return parts.join(', ');
+}
+
+/* ----------------------------- Screen time ----------------------------- */
+
+function formatHours(seconds) {
+  const total = Math.round(seconds / 60);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return h ? `${h} h ${m < 10 ? '0' : ''}${m} min` : `${m} min`;
+}
+
+function createScreenTimeSection() {
+  const elmSection = el('div', 'ytaf-ui-group');
+  elmSection.appendChild(createHeading(t('ui.screenTime', 'Screen time')));
+  const elmText = el('div', 'ytaf-ui-empty');
+  elmSection.appendChild(elmText);
+  elmSection.appendChild(
+    createButton(
+      t('ui.screenTimeReset', 'Reset screen time'),
+      () => {
+        resetScreenTime();
+        render();
+      },
+      'trackScreenTime'
+    )
+  );
+
+  const render = () => {
+    const summary = summarizeScreenTime();
+    elmText.textContent = '';
+    if (!summary.total) {
+      elmText.textContent = t('ui.screenTimeEmpty', 'Nothing counted yet.');
+      return;
+    }
+    const lines = [
+      t('ui.screenTimeToday', 'Today: {time}', {
+        time: formatHours(summary.today)
+      }),
+      t('ui.screenTimeWeek', 'Last 7 days: {time}', {
+        time: formatHours(summary.week)
+      }),
+      t('ui.screenTimeTotal', 'Total since {date}: {time}', {
+        date: new Date(summary.since).toLocaleDateString(),
+        time: formatHours(summary.total)
+      })
+    ];
+    if (summary.channels.length) {
+      lines.push(
+        t('ui.screenTimeChannels', 'Most time: {list}', {
+          list: summary.channels
+            .map((c) => `${c.name} (${formatHours(c.seconds)})`)
+            .join(', ')
+        })
+      );
+    }
+    for (const text of lines) {
+      const elmLine = el('div');
+      elmLine.textContent = text;
+      elmText.appendChild(elmLine);
+    }
+  };
+  elmSection.addEventListener('ytaf-refresh', render);
+  render();
+  return elmSection;
 }
 
 function createChannelSection() {
@@ -473,9 +550,20 @@ function createChannelSection() {
     },
     'channelSettings'
   );
+  const elmSpoiler = createButton(
+    '',
+    () => {
+      const channel = getChannel();
+      if (!channel) return;
+      const on = !!getChannelSettings(channel).spoilerFree;
+      setChannelSetting(channel, 'spoilerFree', on ? undefined : true);
+    },
+    'channelSettings'
+  );
   elmSection.appendChild(elmSpeed);
   elmSection.appendChild(elmResolution);
   elmSection.appendChild(elmSponsor);
+  elmSection.appendChild(elmSpoiler);
 
   const elmList = document.createElement('div');
   elmSection.appendChild(elmList);
@@ -488,6 +576,7 @@ function createChannelSection() {
     elmSpeed.style.display = channel ? '' : 'none';
     elmSponsor.style.display = channel ? '' : 'none';
     elmResolution.style.display = channel ? '' : 'none';
+    elmSpoiler.style.display = channel ? '' : 'none';
 
     if (channel) {
       const settings = getChannelSettings(channel);
@@ -516,6 +605,13 @@ function createChannelSection() {
           state: settings.noSponsorBlock
             ? t('msg.off', 'Off')
             : t('msg.on', 'On')
+        }
+      );
+      elmSpoiler.textContent = t(
+        'ui.channelSpoilerFree',
+        'Spoiler protection for this channel: {state}',
+        {
+          state: settings.spoilerFree ? t('msg.on', 'On') : t('msg.off', 'Off')
         }
       );
     }
@@ -822,8 +918,9 @@ const PAGES = [
         'Interruptions',
         ['enableAdBlock', 'hideYouThere', 'hideNags', 'mutePreviews']
       ],
-      ['App', ['enhancedLongPress', 'checkForUpdates']]
-    ]
+      ['App', ['enhancedLongPress', 'checkForUpdates', 'trackScreenTime']]
+    ],
+    after: createScreenTimeSection
   },
   {
     title: 'Playback',
@@ -838,8 +935,14 @@ const PAGES = [
           'maxResolution',
           'forceOriginalAudio',
           'removeEndscreen',
+          'skipEndscreen',
+          'skipSponsorChapters',
           'rememberPosition'
         ]
+      ],
+      [
+        'Picture',
+        ['videoZoom', 'videoBrightness', 'videoContrast', 'videoSaturation']
       ],
       [
         'Subtitles',
@@ -854,7 +957,13 @@ const PAGES = [
       ],
       [
         'Controls',
-        ['seekStep', 'enableScrollSeek', 'numberKeySeek', 'sleepTimer']
+        [
+          'seekStep',
+          'enableScrollSeek',
+          'numberKeySeek',
+          'sleepTimer',
+          'pauseOnHide'
+        ]
       ],
       [
         'Display',
@@ -881,13 +990,20 @@ const PAGES = [
           'hideLiveStreams',
           'hideUpcoming',
           'hideMembersOnly',
+          'hideMixes',
+          'hideLowRated',
           'minVideoLength',
           'hideWatchRecommendations'
         ]
       ],
       [
-        'Subscriptions',
-        ['cleanSubscriptions', 'subscriptionsOnHome', 'sortSubscriptions']
+        'Home and subscriptions',
+        [
+          'continueWatchingRow',
+          'subscriptionsOnHome',
+          'cleanSubscriptions',
+          'sortSubscriptions'
+        ]
       ],
       [
         'Thumbnails and titles',

@@ -17,8 +17,26 @@ const MIN_DURATION_S = 5 * 60;
 /** Near the start or end counts as "not started" or "finished". */
 const EDGE_S = 30;
 
+/** What a "Continue watching" tile needs to show the video. */
+export interface VideoMeta {
+  title: string;
+  author: string;
+  /** Length in seconds. */
+  len: number;
+  /** Thumbnail URL. */
+  thumb: string;
+}
+
 interface Entry {
   t: number;
+  at: number;
+  meta?: VideoMeta;
+}
+
+export interface ContinueEntry extends VideoMeta {
+  videoId: string;
+  /** Position in seconds. */
+  time: number;
   at: number;
 }
 
@@ -46,6 +64,47 @@ function save(positions: Positions) {
   } catch {
     // Storage full or unavailable: resuming is best effort.
   }
+}
+
+/** Details of recently loaded videos, from their player responses. */
+const metaById: Record<string, VideoMeta> = {};
+const metaOrder: string[] = [];
+
+function rememberMeta(videoId: string, details: Record<string, unknown>) {
+  const thumbs = (details.thumbnail as { thumbnails?: unknown } | undefined)
+    ?.thumbnails;
+  let thumb = '';
+  if (Array.isArray(thumbs)) {
+    // The largest one up to 720p wide is plenty for a tile.
+    for (const item of thumbs) {
+      const url = (item as { url?: unknown; width?: unknown }).url;
+      const width = Number((item as { width?: unknown }).width);
+      if (typeof url === 'string' && (!thumb || width <= 720)) thumb = url;
+    }
+  }
+  metaById[videoId] = {
+    title: typeof details.title === 'string' ? details.title : '',
+    author: typeof details.author === 'string' ? details.author : '',
+    len: Number(details.lengthSeconds) || 0,
+    thumb
+  };
+  if (metaOrder.indexOf(videoId) === -1) metaOrder.push(videoId);
+  if (metaOrder.length > 50) delete metaById[metaOrder.shift()!];
+}
+
+/** Videos stopped in the middle, newest first, for the Home row. */
+export function getContinueWatching(limit: number): ContinueEntry[] {
+  const positions = load();
+  return Object.keys(positions)
+    .filter((id) => positions[id]!.meta && positions[id]!.t >= EDGE_S)
+    .sort((a, b) => positions[b]!.at - positions[a]!.at)
+    .slice(0, limit)
+    .map((id) => ({
+      ...positions[id]!.meta!,
+      videoId: id,
+      time: positions[id]!.t,
+      at: positions[id]!.at
+    }));
 }
 
 function formatTime(seconds: number) {
@@ -84,7 +143,10 @@ function remember() {
     if (!positions[videoId]) return;
     delete positions[videoId];
   } else {
-    positions[videoId] = { t: Math.floor(time), at: Date.now() };
+    const entry: Entry = { t: Math.floor(time), at: Date.now() };
+    const meta = metaById[videoId] ?? positions[videoId]?.meta;
+    if (meta) entry.meta = meta;
+    positions[videoId] = entry;
   }
   save(positions);
 }
@@ -107,6 +169,7 @@ addParseHandler('resume-position', (res) => {
   const details = res.videoDetails as { videoId?: unknown } | undefined;
   const videoId = details?.videoId;
   if (typeof videoId !== 'string' || !('streamingData' in res)) return;
+  rememberMeta(videoId, details as Record<string, unknown>);
 
   const config = (res.playerConfig ?? {}) as PlayerConfig;
   const start = config.playbackStartConfig?.startSeconds;

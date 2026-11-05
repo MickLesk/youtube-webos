@@ -7,6 +7,7 @@ import { configGetChoices, configRead, configWrite } from './config';
 import { t } from './i18n';
 import { getPlayerManager, PlayerMode } from './player_api';
 import { getQueueLength } from './video-queue';
+import { zoomLabel } from './video-picture';
 import { runColorAction, setColorActionHandler } from './ui';
 import { isWatchPage, onPageChange } from './page-state';
 
@@ -102,6 +103,15 @@ const ITEMS: Item[] = [
       t('quick.queue', 'Next in queue ({count})', { count: getQueueLength() }),
     run: () => runColorAction('queueNext'),
     available: () => getQueueLength() > 0,
+    closes: true
+  },
+  {
+    label: () => t('quick.zoom', 'Picture: {value}', { value: zoomLabel() }),
+    run: () => runColorAction('zoom')
+  },
+  {
+    label: () => t('quick.phoneQr', 'Continue on phone'),
+    run: () => runColorAction('phoneQr'),
     closes: true
   },
   {
